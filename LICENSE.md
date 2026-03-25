@@ -1,7 +1,7 @@
-END USER LICENSE AGREEMENT AND PROPRIETARY NOTICE
+# END USER LICENSE AGREEMENT AND PROPRIETARY NOTICE
 
 **Software:** Daedalus: A Multi-Agent Engine for Generative Industrial Twinning and Automated Procurement
-**Copyright (c) 2026 [Vos Noms / Daedalus Team]**
+**Copyright (c) 2026 [Daedalus Team]**
 **All Rights Reserved.**
 
 ## 1. PROPRIETARY RIGHTS
