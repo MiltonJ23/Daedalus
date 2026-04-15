@@ -1,0 +1,5 @@
+development:
+  dialect: postgres
+  datasource: ${DB_DSN}
+  dir: deployments/migrations
+  table: gorp_migrations

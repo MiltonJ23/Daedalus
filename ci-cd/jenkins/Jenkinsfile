@@ -1,0 +1,142 @@
+pipeline {
+    agent any
+
+    environment {
+        REGISTRY       = credentials('docker-registry-url')
+        REGISTRY_CREDS = credentials('docker-registry-credentials')
+        KUBECONFIG     = credentials('kubeconfig')
+        IMAGE_TAG      = "${env.GIT_COMMIT?.take(8) ?: 'latest'}"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    stages {
+        // ─────────────────────────────────────────
+        // Stage 1 — Lint & Test Backend (Go)
+        // ─────────────────────────────────────────
+        stage('Backend: Lint & Test') {
+            steps {
+                dir('services/project-service') {
+                    sh '''
+                        echo "── Go Vet (Lint) ──"
+                        go vet ./...
+
+                        echo "── Unit Tests ──"
+                        go test -v ./... -coverprofile=coverage.out 2>&1 | tee test-output.txt
+
+                        echo "── Build ──"
+                        go build -o bin/project-api cmd/project-api/main.go
+                    '''
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Stage 2 — Lint & Build Frontend
+        // ─────────────────────────────────────────
+        stage('Frontend: Lint & Build') {
+            steps {
+                dir('frontend') {
+                    sh '''
+                        npm ci --ignore-scripts
+                        echo "── Lint ──"
+                        npm run lint
+                        echo "── Build ──"
+                        npm run build
+                    '''
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Stage 3 — Docker Build (Parallel)
+        // ─────────────────────────────────────────
+        stage('Docker: Build') {
+            parallel {
+                stage('Backend Image') {
+                    steps {
+                        dir('services/project-service') {
+                            sh """
+                                docker build -t ${REGISTRY}/daedalus-backend:${IMAGE_TAG} .
+                                docker tag ${REGISTRY}/daedalus-backend:${IMAGE_TAG} ${REGISTRY}/daedalus-backend:latest
+                            """
+                        }
+                    }
+                }
+                stage('Frontend Image') {
+                    steps {
+                        dir('frontend') {
+                            sh """
+                                docker build -t ${REGISTRY}/daedalus-frontend:${IMAGE_TAG} .
+                                docker tag ${REGISTRY}/daedalus-frontend:${IMAGE_TAG} ${REGISTRY}/daedalus-frontend:latest
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Stage 4 — Docker Push to Registry
+        // ─────────────────────────────────────────
+        stage('Docker: Push to Registry') {
+            steps {
+                sh """
+                    echo \${REGISTRY_CREDS_PSW} | docker login \${REGISTRY} -u \${REGISTRY_CREDS_USR} --password-stdin
+
+                    docker push ${REGISTRY}/daedalus-backend:${IMAGE_TAG}
+                    docker push ${REGISTRY}/daedalus-backend:latest
+                    docker push ${REGISTRY}/daedalus-frontend:${IMAGE_TAG}
+                    docker push ${REGISTRY}/daedalus-frontend:latest
+                """
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Stage 5 — Deploy to Kubernetes (K3s)
+        // ─────────────────────────────────────────
+        stage('Deploy: Kubernetes') {
+            steps {
+                sh """
+                    export KUBECONFIG=\${KUBECONFIG}
+
+                    echo "── Applying manifests ──"
+                    kubectl apply -f infrastructure/kubernetes/namespace.yaml
+                    kubectl apply -f infrastructure/kubernetes/postgres-pvc.yaml
+                    kubectl apply -f infrastructure/kubernetes/postgres-deployment.yaml
+                    kubectl apply -f infrastructure/kubernetes/backend-deployment.yaml
+                    kubectl apply -f infrastructure/kubernetes/frontend-deployment.yaml
+                    kubectl apply -f infrastructure/kubernetes/ingress.yaml
+
+                    echo "── Updating images ──"
+                    kubectl set image deployment/backend backend=${REGISTRY}/daedalus-backend:${IMAGE_TAG} -n daedalus
+                    kubectl set image deployment/frontend frontend=${REGISTRY}/daedalus-frontend:${IMAGE_TAG} -n daedalus
+
+                    echo "── Verifying rollout ──"
+                    kubectl rollout status deployment/backend -n daedalus --timeout=120s
+                    kubectl rollout status deployment/frontend -n daedalus --timeout=120s
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline completed — deployed ${IMAGE_TAG} to K3s"
+        }
+        failure {
+            echo "❌ Pipeline failed at stage: ${env.STAGE_NAME}"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

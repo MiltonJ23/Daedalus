@@ -1,0 +1,38 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "rate(flask_http_request_total[5m])", "legendFormat": "{{method}} {{endpoint}}" }],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "title": "Request Latency (p95)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "histogram_quantile(0.95, rate(flask_http_request_duration_seconds_bucket[5m]))", "legendFormat": "p95" }],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "title": "Error Rate (5xx)",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "sum(rate(flask_http_request_total{status=~\"5..\"}[5m]))", "legendFormat": "5xx/s" }],
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 }
+    },
+    {
+      "title": "Active Projects",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "daedalus_projects_total{status=\"active\"}", "legendFormat": "Active" }],
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 }
+    }
+  ],
+  "schemaVersion": 38,
+  "title": "Daedalus — Project Service",
+  "uid": "daedalus-project-service",
+  "version": 1
+}

@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Project Management API
+  description: >
+    REST API for managing industrial factory projects.
+    Part of the Daedalus Industrial Digital Twins platform — Sprint 2.
+  version: 2.0.0
+  contact:
+    name: Daedalus Team
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local development
+  - url: http://daedalus.local/api
+    description: Kubernetes (K3s)
+
+paths:
+  /projects:
+    post:
+      summary: Create a new project
+      tags: [Projects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: No input data provided
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    get:
+      summary: List projects
+      tags: [Projects]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived, all]
+            default: active
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjectList'
+
+  /projects/{id}:
+    get:
+      summary: Get a project by ID
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+
+    put:
+      summary: Update a project
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdate'
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+        '422':
+          description: Validation error
+
+    delete:
+      summary: Permanently delete a project
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: confirm
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: ["true"]
+          description: Must be "true" to confirm permanent deletion
+      responses:
+        '200':
+          description: Project deleted
+        '400':
+          description: Confirmation required
+        '404':
+          description: Project not found
+
+  /projects/{id}/autosave:
+    patch:
+      summary: Auto-save project (incremental update)
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdate'
+      responses:
+        '200':
+          description: Auto-save result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoSaveResponse'
+        '404':
+          description: Project not found
+
+  /projects/{id}/archive:
+    patch:
+      summary: Archive or restore a project
+      tags: [Projects]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [archive, restore]
+            default: archive
+      responses:
+        '200':
+          description: Project archived/restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+
+  /health:
+    get:
+      summary: Health check
+      tags: [System]
+      responses:
+        '200':
+          description: Service is healthy
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      tags: [System]
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+
+components:
+  parameters:
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ProjectCreate:
+      type: object
+      required: [name, industry_type, location, budget, floor_width, floor_depth]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        industry_type:
+          type: string
+          maxLength: 120
+        location:
+          type: string
+          maxLength: 255
+        budget:
+          type: number
+          minimum: 0
+        floor_width:
+          type: number
+          exclusiveMinimum: 0
+        floor_depth:
+          type: number
+          exclusiveMinimum: 0
+        target_capacity:
+          type: string
+          maxLength: 255
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        industry_type:
+          type: string
+        location:
+          type: string
+        budget:
+          type: number
+          minimum: 0
+        floor_width:
+          type: number
+          exclusiveMinimum: 0
+        floor_depth:
+          type: number
+          exclusiveMinimum: 0
+        target_capacity:
+          type: string
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        industry_type:
+          type: string
+        location:
+          type: string
+        budget:
+          type: number
+        floor_width:
+          type: number
+        floor_depth:
+          type: number
+        target_capacity:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, archived]
+        version:
+          type: integer
+        is_archived:
+          type: boolean
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectList:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        industry_type:
+          type: string
+        location:
+          type: string
+        budget:
+          type: number
+        floor_width:
+          type: number
+        floor_depth:
+          type: number
+        updated_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        is_archived:
+          type: boolean
+
+    AutoSaveResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        version:
+          type: integer
+        updated_at:
+          type: string
+          format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string

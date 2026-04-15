@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+frontend/.next/
+
+# Go
+services/project-service/bin/
+*.exe
+*.test
+
+# Python (legacy)
+__pycache__/
+*.pyc
+venv/
+instance/
+
+# IDE
+.vscode/
+.idea/
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: daedalus
+      POSTGRES_PASSWORD: daedalus
+      POSTGRES_DB: daedalus
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daedalus"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./services/project-service
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      DB_DSN: postgres://daedalus:daedalus@postgres:5432/daedalus?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
