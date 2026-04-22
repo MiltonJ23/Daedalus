@@ -1,0 +1,1079 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Packages ───────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english,french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=blue,
+    citecolor=blue,
+    pdftitle={Daedalus SRS v2.0},
+    pdfauthor={Daedalus Team}
+}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+\usepackage{listings}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{amsmath}
+
+% ─── Colours ────────────────────────────────────────────────────────────────
+\definecolor{daedalusdark}{RGB}{15,23,42}
+\definecolor{daedalusblue}{RGB}{37,99,235}
+\definecolor{daedaluscyan}{RGB}{6,182,212}
+\definecolor{daedalusgreen}{RGB}{16,185,129}
+\definecolor{daedalusgray}{RGB}{100,116,139}
+\definecolor{daedalusgold}{RGB}{234,179,8}
+\definecolor{tablehead}{RGB}{30,58,138}
+\definecolor{tablerow}{RGB}{239,246,255}
+\definecolor{musthave}{RGB}{220,252,231}
+\definecolor{shouldhave}{RGB}{254,249,195}
+\definecolor{couldhave}{RGB}{243,244,246}
+\definecolor{newfeature}{RGB}{255,237,213}
+
+% ─── Section formatting ──────────────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{daedalusdark}}{\thesection}{1em}{}[\color{daedalusblue}\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{daedalusdark}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{daedalusgray}}{\thesubsubsection}{1em}{}
+
+% ─── Header / Footer ─────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{daedalusgray}{Daedalus — SRS v2.0}}
+\fancyhead[R]{\small\textcolor{daedalusgray}{ICT University — SEN3244}}
+\fancyfoot[C]{\small\textcolor{daedalusgray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ─── Code listings ───────────────────────────────────────────────────────────
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!8},
+  frame=single,
+  rulecolor=\color{gray!30},
+  breaklines=true,
+  captionpos=b
+}
+
+% ─── Custom commands ──────────────────────────────────────────────────────────
+\newcommand{\req}[1]{\texttt{\textcolor{daedalusblue}{#1}}}
+\newcommand{\NEW}{\textcolor{daedalusgold}{\textbf{[NOUVEAU]}}}
+\newcommand{\musthave}{\cellcolor{musthave}\textbf{Must Have}}
+\newcommand{\shouldhave}{\cellcolor{shouldhave}Should Have}
+\newcommand{\couldhave}{\cellcolor{couldhave}Could Have}
+
+% ════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ─── TITLE PAGE ──────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \pagecolor{daedalusdark}
+  \color{white}
+  \centering
+  \vspace*{2cm}
+
+  {\Huge\bfseries SOFTWARE REQUIREMENTS}\\[0.4em]
+  {\Huge\bfseries SPECIFICATION}\\[2em]
+
+  {\color{daedaluscyan}\rule{10cm}{2pt}}\\[1.5em]
+
+  {\LARGE\bfseries DAEDALUS}\\[0.6em]
+  {\large A Multi-Agent Engine for Generative Industrial Twinning,}\\[0.2em]
+  {\large Automated Procurement \& AI-Powered Factory Design}\\[2.5em]
+
+  {\color{daedaluscyan}\rule{10cm}{1pt}}\\[2em]
+
+  \begin{tabular}{rl}
+    \textbf{Institution :}   & Faculty of ICT — ICT University \\[0.3em]
+    \textbf{Course :}        & SEN3244 — Software Architecture \\[0.3em]
+    \textbf{Instructor :}    & Engr. TEKOH PALMA \\[0.3em]
+    \textbf{Session :}       & Spring 2026 \\[0.3em]
+    \textbf{Document :}      & SRS v2.0 \\[0.3em]
+    \textbf{Date :}          & April 2026 \\[0.3em]
+    \textbf{Présentation :}  & Semaine du 6 juin 2026 \\
+  \end{tabular}
+
+  \vfill
+  {\color{daedalusgray}\small Document officiel de référence — Toute modification doit être versionnée}
+\end{titlepage}
+
+\pagecolor{white}
+\color{black}
+\newpage
+
+% ─── DOCUMENT CONTROL ────────────────────────────────────────────────────────
+\section*{Document Control}
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Version}} & \textcolor{white}{\textbf{Date}} & \textcolor{white}{\textbf{Auteur}} & \textcolor{white}{\textbf{Changements}} \\
+\hline
+1.0 & Mars 2026    & Équipe Daedalus & Document initial. \\
+\hline
+2.0 & Avril 2026   & Équipe Daedalus & Ajout : Payment Service (SaaS), Auth OAuth2.0 + Traefik, Notification Service complet, 3D Asset Service (mesh génératif), stratégie ADK Python, module Shared, plan de sprints révisé. \\
+\hline
+\end{tabularx}
+
+\vspace{1em}
+\noindent\textbf{Nouvelles fonctionnalités v2.0 :}
+\begin{itemize}[noitemsep]
+  \item \NEW\ Payment Service — Modèle SaaS avec abonnements Paystack/Stripe/Mobile Money
+  \item \NEW\ Notification Service — Broadcast, Unicast, Newsletter, Email transactionnel
+  \item \NEW\ OAuth2.0 — Google/GitHub via Traefik Forward Auth proxy
+  \item \NEW\ 3D Asset Service enrichi — Génération de mesh à partir des dimensions physiques
+  \item \NEW\ Stratégie agents IA — Architecture ADK Python multi-agents hiérarchique
+  \item \NEW\ Module Shared — Configurations partagées Go/Python
+\end{itemize}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+
+\subsection{Objet du document}
+Ce SRS décrit les exigences fonctionnelles et non-fonctionnelles de \textbf{Daedalus}, un moteur multi-agents IA pour la conception générative d'usines virtuelles et l'approvisionnement automatisé en équipements industriels. Ce document constitue la référence contractuelle pour le développement, les tests, et la présentation finale prévue la \textbf{semaine du 6 juin 2026}.
+
+\subsection{Vue d'ensemble du projet}
+Daedalus est une plateforme SaaS cloud-native ciblant les entrepreneurs et PME camerounaises et africaines du secteur manufacturier. Elle résout trois problèmes critiques :
+
+\begin{enumerate}
+  \item \textbf{Fragmentation du sourcing} : approvisionnement global en équipements industriels sans expertise ni accès aux marchés internationaux.
+  \item \textbf{Absence d'expertise layout} : conception de plans d'usine sans ingénieurs spécialisés.
+  \item \textbf{Coût prohibitif des outils de simulation} : logiciels industriels (AutoPlant, Factory Design Utilities) coûtant entre 10\,000 et 50\,000 USD par an.
+\end{enumerate}
+
+La plateforme déploie un réseau d'agents IA autonomes qui sourcentles équipements, génèrent les layouts spatiaux, produisent des jumeaux numériques 3D et automatisent l'analyse de coûts et ROI.
+
+\subsection{Périmètre}
+\begin{itemize}
+  \item Application React SPA avec moteur 3D React Three Fiber (R3F/Three.js)
+  \item Backend microservices Python (FastAPI + ADK) et Go
+  \item Agents IA : orchestrateur, procurement, layout, asset 3D
+  \item \NEW\ Payment Service avec abonnements SaaS (Paystack, Stripe, Mobile Money)
+  \item \NEW\ Notification Service (email, WebSocket, newsletter)
+  \item \NEW\ Authentification OAuth2.0 (Google, GitHub) via Traefik Forward Auth
+  \item CI/CD Jenkins, Kubernetes (K3s), monitoring Prometheus/Grafana/Jaeger
+\end{itemize}
+
+\noindent\textbf{Hors périmètre v2.0 :} Intégrations ERP, capteurs IoT physiques, AR hardware overlay.
+
+\subsection{Définitions et acronymes}
+
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Terme}} & \textcolor{white}{\textbf{Définition}} \\
+\hline
+ADK & Agent Development Kit (Google) — framework Python pour agents IA \\
+GLTF/GLB & GL Transmission Format — format 3D léger pour le web \\
+JWT & JSON Web Token \\
+RBAC & Role-Based Access Control \\
+XAF & Franc CFA — devise principale (CEMAC) \\
+R3F & React Three Fiber \\
+PBR & Physically Based Rendering \\
+LOD & Level of Detail \\
+BOM & Bill of Materials \\
+SaaS & Software as a Service \\
+MoMo & Mobile Money (MTN, Orange) \\
+OTLP & OpenTelemetry Protocol \\
+ADK & Google Agent Development Kit (Python) \\
+Forward Auth & Middleware Traefik de délégation d'authentification \\
+\hline
+\end{tabularx}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Description générale du système}
+
+\subsection{Perspective produit}
+Daedalus est une plateforme greenfield sans système prédécesseur direct. Elle s'intègre avec des systèmes externes (APIs fournisseurs, passerelles de paiement, services email) via des APIs bien définies. L'architecture est structurée en quatre couches :
+
+\begin{enumerate}
+  \item \textbf{Couche client} : SPA React (TypeScript) + React Three Fiber
+  \item \textbf{Couche gateway} : Traefik reverse proxy + Forward Auth + rate limiter
+  \item \textbf{Couche services} : microservices Python/Go + agents ADK
+  \item \textbf{Couche données} : PostgreSQL, Redis, MinIO, RabbitMQ
+\end{enumerate}
+
+\subsection{Fonctions principales}
+
+\begin{enumerate}
+  \item \textbf{Gestion de projets} — création, configuration et persistance des projets d'usine
+  \item \textbf{Authentification \& autorisation} — OAuth2.0, JWT, RBAC
+  \item \textbf{Approvisionnement autonome} — sourcing IA d'équipements industriels mondiaux
+  \item \textbf{Layout génératif} — placement spatial optimisé des équipements
+  \item \textbf{Jumeau numérique 3D} — visualisation R3F interactive et photorealiste
+  \item \textbf{Analyse coût \& ROI} — modélisation financière et projections d'investissement
+  \item \NEW\ \textbf{Paiements \& abonnements} — SaaS tiered, Paystack/Stripe/MoMo
+  \item \NEW\ \textbf{Notifications} — email transactionnel, broadcast WebSocket, newsletter
+  \item \NEW\ \textbf{Génération d'assets 3D} — mesh synthétiques à partir des dimensions physiques
+\end{enumerate}
+
+\subsection{Classes d'utilisateurs}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Rôle}} & \textcolor{white}{\textbf{Plan min.}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+Entrepreneur & Free & PME, porteurs de projets industriels. Utilisateur principal. \\
+\hline
+Ingénieur & Pro & Professionnel technique ajouté par l'entrepreneur comme collaborateur. \\
+\hline
+Administrateur & Enterprise & Gestion des utilisateurs, configuration des agents, monitoring système. \\
+\hline
+Partenaire Intégrateur & Enterprise & Bureau d'études ou cabinet-conseil gérant plusieurs workspaces clients. \\
+\hline
+\end{tabularx}
+
+\subsection{Environnement opérationnel}
+
+\begin{itemize}
+  \item \textbf{Client} : navigateur moderne (Chrome 110+, Firefox 115+, Edge 110+) avec WebGL 2.0 — RAM min. 4 Go
+  \item \textbf{Serveur} : Ubuntu 24.04 LTS — VPS min. 4 vCPU, 8 Go RAM (Contabo/Hetzner)
+  \item \textbf{Orchestration} : Kubernetes K3s ou managed K8s
+  \item \textbf{Réseau} : HTTPS TLS 1.3, Traefik Ingress Controller, Cloudflare CDN
+  \item \textbf{Données} : PostgreSQL 16, Redis 7, MinIO, RabbitMQ 3.12
+  \item \textbf{Tracing} : Jaeger (OpenTelemetry OTLP)
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Exigences fonctionnelles}
+
+\subsection{Auth Service — Authentification \& Autorisation}
+
+\subsubsection{Enregistrement et connexion classique}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{AUTH-001} & L'utilisateur peut s'inscrire avec email + mot de passe. Un email de vérification est envoyé via le Notification Service avant tout accès. & \musthave \\
+\hline
+\req{AUTH-002} & L'utilisateur peut se connecter et reçoit un access token (JWT, TTL 30 min) et un refresh token (TTL 7 jours). & \musthave \\
+\hline
+\req{AUTH-003} & L'utilisateur peut réinitialiser son mot de passe via un lien email (token expirant en 1 heure). & \musthave \\
+\hline
+\req{AUTH-004} & Les rôles \texttt{ADMIN}, \texttt{ENGINEER}, \texttt{ENTREPRENEUR} sont appliqués via RBAC. Les accès non autorisés retournent HTTP 403. & \musthave \\
+\hline
+\end{tabularx}
+
+\subsubsection{OAuth2.0 et Traefik Forward Auth \NEW}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{AUTH-005} & L'utilisateur peut s'authentifier via Google OAuth2.0 (bouton « Continuer avec Google »). & \musthave \\
+\hline
+\req{AUTH-006} & L'utilisateur peut s'authentifier via GitHub OAuth2.0. & \shouldhave \\
+\hline
+\req{AUTH-007} & Traefik est configuré avec le middleware \texttt{ForwardAuth} pointant vers le auth-service (\texttt{/auth/verify}). Toutes les requêtes vers les services protégés passent par cette vérification. & \musthave \\
+\hline
+\req{AUTH-008} & Le auth-service expose un endpoint \texttt{GET /auth/verify} qui valide le JWT/session OAuth et retourne les headers \texttt{X-User-Id}, \texttt{X-User-Role}, \texttt{X-User-Plan} aux services en aval. & \musthave \\
+\hline
+\req{AUTH-009} & Après un login OAuth réussi, si l'email n'existe pas en base, un compte est automatiquement créé avec le plan \texttt{FREE} et un événement \texttt{user.registered} est publié. & \musthave \\
+\hline
+\req{AUTH-010} & Les tokens OAuth sont stockés de façon sécurisée (Redis, TTL aligné avec l'expiration OAuth). Le refresh flow OAuth est géré transparemment. & \musthave \\
+\hline
+\end{tabularx}
+
+\paragraph{Flux OAuth2.0 avec Traefik Forward Auth}
+
+\begin{lstlisting}[language={}]
+Client Browser
+    |
+    |── GET /api/projects --> Traefik Ingress
+                                  |
+                         ForwardAuth middleware
+                                  |
+                         GET /auth/verify (auth-service)
+                                  |
+                    [Token valide] --> X-User-Id, X-User-Role, X-User-Plan headers
+                                  |
+                         Route vers project-service
+                                  |
+                    [Token invalide] --> 401 --> Redirect /login ou /oauth/google
+\end{lstlisting}
+
+\subsection{Project Management Service}
+
+\textbf{Statut : Sprint 1 terminé.} Le service implémente la gestion CRUD des projets d'usine (création, configuration floor plan, archivage, auto-sauvegarde, dashboard utilisateur). Voir backlog items PB-014 à PB-018.
+
+\subsection{Notification Service \NEW}
+
+Le Notification Service est le hub centralisé de toutes les communications sortantes de Daedalus. Il consomme des événements RabbitMQ et supporte plusieurs canaux de livraison.
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{NOTIF-001} & Le service expose un consumer RabbitMQ sur l'exchange \texttt{daedalus.events}. Il traite tous les événements nécessitant une notification. & \musthave \\
+\hline
+\req{NOTIF-002} & \textbf{Email transactionnel} : Envoi d'emails via SMTP/Mailgun pour : (a) vérification de compte, (b) reset de mot de passe, (c) confirmation de paiement, (d) résultat de procurement, (e) layout généré. & \musthave \\
+\hline
+\req{NOTIF-003} & \textbf{Unicast WebSocket} : Envoi d'une notification en temps réel à un utilisateur spécifique (ex : « Votre layout est prêt »). La connexion WebSocket est identifiée par le JWT. & \musthave \\
+\hline
+\req{NOTIF-004} & \textbf{Broadcast WebSocket} : Envoi d'un message à tous les utilisateurs connectés (ex : maintenance planifiée, nouvelle fonctionnalité). Réservé aux admins. & \musthave \\
+\hline
+\req{NOTIF-005} & \textbf{Newsletter} : Gestion d'une liste de subscribers (opt-in/opt-out). Envoi de newsletters périodiques avec suivi (ouverture, clics) si Mailgun est utilisé. & \shouldhave \\
+\hline
+\req{NOTIF-006} & \textbf{Types de messages} : le service supporte les types \texttt{INFO}, \texttt{SUCCESS}, \texttt{WARNING}, \texttt{ERROR}, \texttt{AGENT\_UPDATE}. Chaque type a un template email distinct. & \musthave \\
+\hline
+\req{NOTIF-007} & \textbf{In-app notifications} : persistance des notifications en base pour consultation ultérieure (« cloche » dans le header). Non lues / lues. & \shouldhave \\
+\hline
+\req{NOTIF-008} & \textbf{API directe} : un endpoint REST \texttt{POST /notifications/send} permet à tout service interne (via token service-to-service) d'envoyer une notification directement. & \musthave \\
+\hline
+\req{NOTIF-009} & Les préférences de notification sont configurables par utilisateur (opt-out email marketing tout en conservant les notifs transactionnelles). & \shouldhave \\
+\hline
+\end{tabularx}
+
+\paragraph{Architecture interne du Notification Service}
+
+\begin{lstlisting}[language={}]
+RabbitMQ Exchange (daedalus.events)
+         |
+   NotificationConsumer
+         |
+   DispatchRouter
+    /     |    \
+Email  WebSocket  In-App DB
+(SMTP) (Socket.io) (PostgreSQL)
+
+Templates : Jinja2 (Python) / Handlebars (si Node.js)
+Newsletter : via Mailgun Lists API
+\end{lstlisting}
+
+\subsection{Payment Service \NEW}
+
+\subsubsection{Modèle économique recommandé : SaaS Freemium + Abonnements}
+
+Daedalus adopte un modèle \textbf{SaaS Freemium} avec 4 niveaux d'abonnement. Ce modèle est justifié par :
+\begin{itemize}
+  \item L'entrée sans friction pour les PME africaines (plan gratuit)
+  \item Des revenus récurrents prévisibles (MRR/ARR)
+  \item L'expansion naturelle au fur et à mesure de la croissance des clients
+  \item La compatibilité avec les moyens de paiement locaux (Mobile Money)
+\end{itemize}
+
+\subsubsection{Grille tarifaire}
+
+\begin{tabularx}{\textwidth}{|X|c|c|c|c|}
+\hline
+\rowcolor{tablehead}
+\textcolor{white}{\textbf{Feature}} &
+\textcolor{white}{\textbf{Free}} &
+\textcolor{white}{\textbf{Starter}} &
+\textcolor{white}{\textbf{Business}} &
+\textcolor{white}{\textbf{Enterprise}} \\
+\hline
+\textbf{Prix mensuel (XAF)} & 0 & 9\,900 & 29\,900 & Sur devis \\
+\hline
+\textbf{Prix mensuel (USD)} & \$0 & \$16 & \$49 & Custom \\
+\hline
+\textbf{Prix annuel (XAF, --20\%)} & 0 & 95\,040 & 287\,040 & Négocié \\
+\hline
+\rowcolor{tablerow}
+Projets actifs & 1 & 5 & 20 & Illimité \\
+\hline
+Requêtes IA / mois & 3 & 30 & 150 & Illimité \\
+\hline
+\rowcolor{tablerow}
+Membres d'équipe / workspace & 1 & 1 & 5 & Illimité \\
+\hline
+Export PDF/CSV & Watermark & HD & HD & HD + White-label \\
+\hline
+\rowcolor{tablerow}
+Viewer 3D basique & \checkmark & \checkmark & \checkmark & \checkmark \\
+\hline
+Walkthrough 3D FPS & \texttimes & \checkmark & \checkmark & \checkmark \\
+\hline
+\rowcolor{tablerow}
+Post-processing (PBR, SSAO, Bloom) & \texttimes & \checkmark & \checkmark & \checkmark \\
+\hline
+Génération mesh 3D (Meshy AI) & \texttimes & Basique & Standard & Premium \\
+\hline
+\rowcolor{tablerow}
+Procurement agent & Limité (1 run) & \checkmark & \checkmark & Dédié \\
+\hline
+Variantes layout & \texttimes & 1 & 3 & Illimité \\
+\hline
+\rowcolor{tablerow}
+Assistant IA intégré (chat) & \texttimes & \texttimes & \checkmark & \checkmark \\
+\hline
+Analyse ROI 5 ans & \texttimes & Basique & Avancée & Personnalisée \\
+\hline
+\rowcolor{tablerow}
+API access & \texttimes & \texttimes & \texttimes & \checkmark \\
+\hline
+Newsletter \& notifications avancées & \texttimes & \texttimes & \checkmark & \checkmark \\
+\hline
+\rowcolor{tablerow}
+SLA garanti & \texttimes & \texttimes & 99.5\% & 99.9\% \\
+\hline
+Support & Communauté & Email (48h) & Email (24h) & Dédié + onboarding \\
+\hline
+\rowcolor{tablerow}
+White-label rapports & \texttimes & \texttimes & \texttimes & \checkmark \\
+\hline
+Mode Partenaire Intégrateur & \texttimes & \texttimes & \texttimes & \checkmark \\
+\hline
+\end{tabularx}
+
+\subsubsection{Justification des features différenciatrices par plan}
+
+\paragraph{Free — « Essayer sans risque »}
+Conçu pour \textbf{valider la proposition de valeur}. 1 projet + 3 runs IA permettent de voir la magie sans engagement. Le watermark sur les exports pousse à l'upgrade. L'absence de walkthrough 3D (la feature la plus impressionnante) crée un désir fort.
+
+\paragraph{Starter (9\,900 XAF/mois ≈ 16 USD)}
+Adapté à l'\textbf{entrepreneur individuel} qui a validé son besoin. 5 projets couvrent 90\% des PME démarrant leur industrialisation. Le walkthrough 3D et les exports HD constituent la valeur principale qui justifie l'upgrade. Prix inférieur au coût d'une heure de conseil en layout industriel.
+
+\paragraph{Business (29\,900 XAF/mois ≈ 49 USD)}
+Cible les \textbf{PME établies} avec équipes de 2 à 5 personnes. La collaboration multi-membres est la feature clé : l'ingénieur peut travailler sur le projet de l'entrepreneur simultanément. L'assistant IA chat permet des interactions continues sans relancer des agents coûteux. Les 3 variantes de layout permettent des présentations professionnelles à des investisseurs. ROI justifié : 1 seule économie sur un équipement mal sourcé couvre 6 mois d'abonnement.
+
+\paragraph{Enterprise (Sur devis, à partir de 149\,900 XAF/mois)}
+Cible les \textbf{bureaux d'études, cabinets-conseils, grandes entreprises}. L'API access permet l'intégration dans des systèmes métier existants. Le white-label permet aux bureaux d'études de présenter Daedalus comme leur propre outil à leurs clients. Le mode Partenaire Intégrateur génère un effet réseau : 1 partenaire peut apporter 10 clients.
+
+\subsubsection{Option Collaboration Tiers Payants (Partenaire Intégrateur)}
+
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Aspect}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\textbf{Concept} & Un bureau d'études ou cabinet-conseil crée un workspace « Partenaire » et gère des sous-workspaces clients au nom de ses clients. \\
+\hline
+\textbf{Facturation} & Le partenaire est facturé de façon centralisée. Il peut refacturer ses clients avec sa propre marge. \\
+\hline
+\textbf{Commission} & Si un partenaire amène $\geq 5$ clients actifs : 15\% de commission récurrente sur les abonnements amenés. \\
+\hline
+\textbf{White-label} & Les rapports PDF ne portent pas le logo Daedalus — logo du partenaire à la place. \\
+\hline
+\textbf{API dédiée} & Accès à l'API Daedalus pour intégration dans les outils du partenaire. \\
+\hline
+\textbf{Intérêt business} & Crée un canal de distribution B2B2B sans force de vente directe. Accélère l'acquisition en Afrique de l'Ouest. \\
+\hline
+\end{tabularx}
+
+\subsubsection{Apport Business de la Solution}
+
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Indicateur}} & \textcolor{white}{\textbf{Estimation}} \\
+\hline
+Économie sur layout & Un cabinet de conseil industriel facture 5\,000--50\,000 USD pour concevoir un plan d'usine. Daedalus le fait en 60 secondes. \\
+\hline
+Économie sur sourcing & L'optimisation IA du sourcing économise en moyenne 5--15\% sur le coût des équipements. Pour un budget de 50\,000 USD, gain = 2\,500--7\,500 USD. \\
+\hline
+Réduction des erreurs & Un layout mal conçu qui nécessite des déplacements d'équipements coûte 20\,000--200\,000 USD. Le jumeau numérique prévient ces erreurs. \\
+\hline
+Temps de mise en marché & Conception traditionnelle : 3--6 mois. Avec Daedalus : 2--4 semaines. \\
+\hline
+ROI client typique & Sur un projet à 100\,000 USD d'équipements : économies estimées à 15\,000--60\,000 USD via meilleur sourcing + layout optimisé. ROI sur abonnement : $\times 50$ minimum. \\
+\hline
+TAM (Afrique subsaharienne) & \textasciitilde 2\,000 PME manufacturières actives au Cameroun + 50\,000 sur l'ensemble de l'Afrique subsaharienne francophone. \\
+\hline
+\end{tabularx}
+
+\subsubsection{Exigences fonctionnelles du Payment Service}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{PAY-001} & L'utilisateur peut souscrire à un plan via \textbf{Paystack} (cartes bancaires, Mobile Money MTN/Orange). & \musthave \\
+\hline
+\req{PAY-002} & L'utilisateur peut souscrire via \textbf{Stripe} (cartes internationales VISA/Mastercard). & \shouldhave \\
+\hline
+\req{PAY-003} & Les abonnements sont mensuels ou annuels (discount 20\% sur l'annuel). & \musthave \\
+\hline
+\req{PAY-004} & Un webhook Paystack/Stripe met à jour le plan utilisateur en base lors d'un paiement réussi/échoué. L'événement \texttt{payment.succeeded} est publié sur RabbitMQ. & \musthave \\
+\hline
+\req{PAY-005} & Le auth-service lit le plan utilisateur (\texttt{X-User-Plan} header) pour que les services en aval enforcentles limites (projets, runs IA, membres). & \musthave \\
+\hline
+\req{PAY-006} & Un utilisateur peut upgrader/downgrader son plan. Le downgrade prend effet à la fin de la période de facturation. & \musthave \\
+\hline
+\req{PAY-007} & Toutes les transactions sont stockées en base avec statut (pending, succeeded, failed, refunded). Un historique est accessible dans le dashboard. & \musthave \\
+\hline
+\req{PAY-008} & Le service envoie une confirmation de paiement par email via le Notification Service. & \musthave \\
+\hline
+\req{PAY-009} & Les prix sont affichés en XAF par défaut avec conversion USD en temps réel. & \musthave \\
+\hline
+\req{PAY-010} & Une période d'essai de 14 jours est offerte sur le plan Starter à l'inscription. & \shouldhave \\
+\hline
+\req{PAY-011} & Le mode Partenaire Intégrateur permet de gérer des sous-comptes et de visualiser la facturation consolidée. & \couldhave \\
+\hline
+\end{tabularx}
+
+\subsubsection{Impact sur les autres services}
+
+Le Payment Service impacte les services suivants :
+
+\begin{itemize}
+  \item \textbf{Auth Service} : champ \texttt{plan} ajouté au profil utilisateur (\texttt{FREE}, \texttt{STARTER}, \texttt{BUSINESS}, \texttt{ENTERPRISE}). Le Forward Auth inclut \texttt{X-User-Plan} dans les headers.
+  \item \textbf{Project Service} : vérifie \texttt{X-User-Plan} pour limiter le nombre de projets actifs.
+  \item \textbf{Orchestrator Agent} : vérifie les quotas de runs IA selon le plan.
+  \item \textbf{3D Asset Service} : qualité du mesh généré (Basic/Standard/Premium) selon le plan.
+  \item \textbf{Notification Service} : consomme \texttt{payment.succeeded} / \texttt{payment.failed} pour les emails transactionnels.
+  \item \textbf{Frontend} : affiche la page de pricing, le portail de gestion de l'abonnement, et les indicateurs de quota.
+\end{itemize}
+
+\subsection{Procurement \& Orchestration Agent}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{PROC-001} & L'utilisateur décrit ses équipements en langage naturel. Le LLM parse la description en JSON structuré (type, dimensions, budget, pays préféré). & \musthave \\
+\hline
+\req{PROC-002} & L'agent de procurement recherche les fournisseurs (Alibaba, Made-in-China, TradeIndia) et retourne $\geq 5$ résultats classés. & \musthave \\
+\hline
+\req{PROC-003} & Les résultats affichent prix en XAF et USD avec taux de change en temps réel. & \musthave \\
+\hline
+\req{PROC-004} & L'utilisateur approve/rejette les équipements. Les résultats de recherche sont mis en cache Redis 24h. & \musthave \\
+\hline
+\req{PROC-005} & L'Orchestrator Agent décompose les objectifs utilisateur en sous-tâches via Redis Streams. Le log d'activité est streamé au frontend via WebSocket. & \musthave \\
+\hline
+\req{PROC-006} & Les limites de runs IA par plan sont enforceées par l'orchestrateur avant de démarrer une session agent. & \musthave \\
+\hline
+\end{tabularx}
+
+\subsection{Layout Engine}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{LAY-001} & Layout généré automatiquement en $< 60$s sans collisions spatiales. & \musthave \\
+\hline
+\req{LAY-002} & Clearances de sécurité 1.2m enforceés. Aucun layout avec violations accepté. & \musthave \\
+\hline
+\req{LAY-003} & Optimisation du flux matière (minimisation des distances de déplacement). & \musthave \\
+\hline
+\req{LAY-004} & 3 variantes de layout générées pour comparaison (selon le plan Business+). & \shouldhave \\
+\hline
+\req{LAY-005} & Drag-and-drop manuel dans la scène 3D avec détection de collision. & \shouldhave \\
+\hline
+\req{LAY-006} & Sortie : manifeste JSON validé (position, rotation, dimensions pour chaque équipement). & \musthave \\
+\hline
+\end{tabularx}
+
+\subsection{3D Asset Service}
+
+\subsubsection{Génération de mesh à partir des dimensions physiques \NEW}
+
+Le 3D Asset Service implémente un pipeline de génération de mesh 3D \textbf{réaliste} pour les équipements industriels, similaire à MeshyAI, en exploitant les dimensions physiques fournies par l'utilisateur.
+
+\paragraph{Pipeline de génération}
+
+\begin{enumerate}
+  \item \textbf{Input} : dimensions $L \times l \times H$ (en mètres) + spécifications textuelles de l'équipement (type, marque, modèle approximatif)
+  \item \textbf{Research Agent} : un agent ADK effectue des recherches web (images, fiches techniques) pour identifier à quoi ressemble l'équipement
+  \item \textbf{Génération mesh} : 
+    \begin{itemize}
+      \item \textbf{Stratégie primaire} : API Meshy.ai (text-to-3D ou image-to-3D) — qualité maximale
+      \item \textbf{Stratégie secondaire} : Shap-E (OpenAI, open-source) ou TripoSR — pour équipements non reconnus
+      \item \textbf{Fallback} : géométrie procédurale paramétrée selon les dimensions (box + détails) — garantit toujours un rendu
+    \end{itemize}
+  \item \textbf{Post-processing} : normalisation aux dimensions réelles, application de matériaux PBR industriels (métal, acier)
+  \item \textbf{Stockage} : fichier GLB stocké dans MinIO, URL presignée retournée
+  \item \textbf{Rendu} : frontend charge via \texttt{useGLTF} dans React Three Fiber
+\end{enumerate}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{3D-001} & La scène R3F charge en $< 4$s. Orbit controls fonctionnels. & \musthave \\
+\hline
+\req{3D-002} & Le service génère ou récupère un mesh GLB pour chaque équipement à partir de ses dimensions + spécifications. & \musthave \\
+\hline
+\req{3D-003} & Les modèles GLB sont mis en cache MinIO. Une recherche identique ne relance pas la génération. & \musthave \\
+\hline
+\req{3D-004} & PBR avec HDR environment lighting. Matériaux industriels (métal, acier brossé). & \shouldhave \\
+\hline
+\req{3D-005} & Clic sur un équipement → raycasting → panneau de spécifications. & \musthave \\
+\hline
+\req{3D-006} & LOD : réduction de polygones au-delà de 20m. FPS $\geq 30$ sur GPU intégré. & \shouldhave \\
+\hline
+\req{3D-007} & Mode walkthrough FPS (WASD + souris) avec collision walls. (Plan Starter+) & \shouldhave \\
+\hline
+\req{3D-008} & Qualité du mesh selon le plan : Basic (procédural), Standard (Shap-E), Premium (Meshy.ai). & \musthave \\
+\hline
+\end{tabularx}
+
+\subsection{Analytics \& Cost Service}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} & \textcolor{white}{\textbf{Priorité}} \\
+\hline
+\req{ANA-001} & Breakdown complet des coûts (équipement + shipping + installation + contingency 10\%) en XAF et USD. & \musthave \\
+\hline
+\req{ANA-002} & Export BOM en PDF et CSV. & \musthave \\
+\hline
+\req{ANA-003} & Projection ROI 5 ans basée sur le volume de production et le prix de vente renseignés par l'utilisateur. & \shouldhave \\
+\hline
+\req{ANA-004} & Export rapport complet projet (équipements + layout + coûts) en PDF. & \shouldhave \\
+\hline
+\end{tabularx}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Exigences non-fonctionnelles}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Catégorie}} & \textcolor{white}{\textbf{ID}} & \textcolor{white}{\textbf{Exigence}} \\
+\hline
+Performance & NFR-P01 & API p95 $< 200$ms pour les endpoints CRUD. Agents IA : $< 30$s pour le premier résultat. \\
+\hline
+\rowcolor{tablerow}
+Performance & NFR-P02 & Scène 3D : chargement $< 4$s. FPS $\geq 30$ sur GPU intégré. Lighthouse score $\geq 75$. \\
+\hline
+Scalabilité & NFR-S01 & HPA Kubernetes sur orchestrateur, procurement et layout engine. \\
+\hline
+\rowcolor{tablerow}
+Scalabilité & NFR-S02 & Payment Service supporte 1\,000 webhooks/minute en pointe. \\
+\hline
+Sécurité & NFR-SEC01 & Toutes les communications HTTPS TLS 1.3. Secrets K8s uniquement. \\
+\hline
+\rowcolor{tablerow}
+Sécurité & NFR-SEC02 & OAuth2.0 tokens stockés en Redis chiffré. Aucun secret dans le code source. \\
+\hline
+Sécurité & NFR-SEC03 & Webhooks Paystack/Stripe validés par signature HMAC. \\
+\hline
+\rowcolor{tablerow}
+Sécurité & NFR-SEC04 & RBAC enforced par Traefik Forward Auth sur tous les endpoints protégés. \\
+\hline
+Disponibilité & NFR-A01 & SLA 99.5\% (plans Business). 99.9\% (Enterprise). \\
+\hline
+\rowcolor{tablerow}
+Observabilité & NFR-O01 & Traces distribuées Jaeger sur tous les services. Métriques Prometheus. Dashboards Grafana. \\
+\hline
+Multi-devise & NFR-C01 & XAF comme devise primaire. Conversion USD en temps réel pour tous les montants affichés. \\
+\hline
+\end{tabularx}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Architecture et conception du système}
+
+\subsection{Style architectural : Microservices}
+
+Daedalus adopte une architecture microservices avec les services suivants :
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Service}} & \textcolor{white}{\textbf{Tech}} & \textcolor{white}{\textbf{Responsabilité}} \\
+\hline
+\texttt{auth-service} & Go (Fiber) & JWT, OAuth2.0, RBAC, Traefik Forward Auth \\
+\hline
+\rowcolor{tablerow}
+\texttt{project-service} & Go (Fiber) & CRUD projets, floor plan, dashboard \\
+\hline
+\texttt{payment-service} \NEW & Python (FastAPI) & Abonnements, Paystack, Stripe, webhooks \\
+\hline
+\rowcolor{tablerow}
+\texttt{notification-service} \NEW & Python (FastAPI) & Email, WebSocket, Newsletter, Broadcast/Unicast \\
+\hline
+\texttt{orchestrator-agent} & Python (ADK + FastAPI) & Décomposition objectifs, délégation sub-agents \\
+\hline
+\rowcolor{tablerow}
+\texttt{procurement-agent} & Python (ADK + Playwright) & Sourcing IA équipements, ranking, cache \\
+\hline
+\texttt{layout-engine} & Python (FastAPI + NetworkX) & Optimisation spatiale, manifeste JSON \\
+\hline
+\rowcolor{tablerow}
+\texttt{3d-asset-service} & Python (ADK + FastAPI) & Research web, génération mesh, stockage MinIO \\
+\hline
+\texttt{analytics-service} & Python (FastAPI) & Coûts, ROI, exports BOM \\
+\hline
+\end{tabularx}
+
+\subsection{Stratégie de développement des agents IA (ADK Python)}
+
+\subsubsection{Choix du framework : Google ADK}
+
+Les services impliquant des agents IA (\texttt{orchestrator-agent}, \texttt{procurement-agent}, \texttt{3d-asset-service}, et partiellement \texttt{layout-engine}) sont développés en \textbf{Python avec Google ADK} (Agent Development Kit). Justification :
+
+\begin{itemize}
+  \item ADK est natif Python, sans overhead de conversion depuis Go
+  \item Support natif des agents multi-tours, multi-outils (Tool use)
+  \item Intégration directe avec Gemini/GPT-4o via une interface unifiée
+  \item \texttt{AgentSession} gère automatiquement l'historique de conversation
+  \item Compatible avec FastAPI pour l'exposition REST
+\end{itemize}
+
+\subsubsection{Architecture multi-agents hiérarchique}
+
+\begin{lstlisting}[language={}]
+OrchestratorAgent (Root)
+    |
+    |── ProcurementAgent (Sub-agent)
+    |       |── WebSearchTool (Playwright/SerpAPI)
+    |       |── PricingTool (exchange rates API)
+    |       └── CacheTool (Redis)
+    |
+    |── LayoutAgent (Sub-agent)
+    |       |── SpatialOptimizerTool (NetworkX)
+    |       └── CollisionDetectionTool
+    |
+    └── AssetGenerationAgent (Sub-agent)
+            |── WebResearchTool (images + specs)
+            |── MeshyAITool (text/image-to-3D)
+            |── ShapETool (fallback)
+            └── MinIOStorageTool
+\end{lstlisting}
+
+\subsubsection{Bonnes pratiques pour les services agents}
+
+\begin{enumerate}
+  \item \textbf{Chaque agent = un service FastAPI indépendant} : exposé via un endpoint \texttt{POST /agent/run} qui accepte un contexte de session et retourne des résultats streamés (SSE ou WebSocket).
+  \item \textbf{Session ADK partagée via Redis} : l'\texttt{AgentSession} est sérialisée en Redis pour permettre la reprise de conversation entre requêtes.
+  \item \textbf{Tools atomiques et testables} : chaque Tool ADK est une fonction Python pure, testable unitairement sans mocker l'agent.
+  \item \textbf{Orchestration asynchrone} : les agents communiquent via RabbitMQ Streams. L'orchestrateur publie des tâches ; les sub-agents consomment et publient leurs résultats.
+  \item \textbf{Observabilité} : chaque step agent est tracé via OpenTelemetry → Jaeger. Le log d'activité agent est streamé au frontend via WebSocket.
+  \item \textbf{Quotas enforced} : avant chaque \texttt{AgentSession.run()}, l'orchestrateur vérifie les quotas du plan utilisateur en Redis (\texttt{plan:quota:<user\_id>:runs}).
+\end{enumerate}
+
+\subsection{Infrastructure et déploiement}
+
+\begin{itemize}
+  \item \textbf{Ingress} : Traefik (remplace Nginx Kong) — gestion TLS, Forward Auth, rate limiting natif
+  \item \textbf{CI/CD} : Jenkins — build, test, push Docker, deploy K8s
+  \item \textbf{Monitoring} : Prometheus + Grafana + Jaeger (traces) + Loki (logs)
+  \item \textbf{Namespaces K8s} : \texttt{daedalus-prod}, \texttt{daedalus-staging}, \texttt{daedalus-infra}
+  \item \textbf{HPA} : orchestrateur, procurement-agent, layout-engine, 3d-asset-service
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Plan de sprints révisé — Présentation : 6 juin 2026}
+
+\subsection{État d'avancement (21 avril 2026)}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Sprint}} & \textcolor{white}{\textbf{Statut}} & \textcolor{white}{\textbf{Livraisons}} \\
+\hline
+Sprint 0 (Infra) & \cellcolor{daedalusgreen!30}\checkmark\ Terminé & VPS, K3s, Traefik, MinIO, PostgreSQL, Redis, RabbitMQ, CI/CD Jenkins \\
+\hline
+\rowcolor{tablerow}
+Sprint 1 (Proj. Mgmt) & \cellcolor{daedalusgreen!30}\checkmark\ Terminé & project-service : CRUD projets, floor plan, dashboard, auto-save \\
+\hline
+\end{tabularx}
+
+\subsection{Sprints restants (6 sprints compactés sur 6 semaines)}
+
+\begin{tabularx}{\textwidth}{|l|l|l|X|}
+\hline
+\rowcolor{tablehead}
+\textcolor{white}{\textbf{Sprint}} &
+\textcolor{white}{\textbf{Période}} &
+\textcolor{white}{\textbf{SP}} &
+\textcolor{white}{\textbf{Objectif \& Livrables}} \\
+\hline
+\textbf{Sprint 2} & 21 -- 28 avr & 38 SP &
+\textbf{Auth Service + OAuth2.0}
+\newline auth-service (Go) : registration, login, JWT, RBAC
+\newline OAuth2.0 Google + GitHub
+\newline Traefik ForwardAuth (\texttt{/auth/verify})
+\newline Headers X-User-Id, X-User-Role, X-User-Plan
+\newline Tests unitaires auth $\geq 80\%$ \\
+\hline
+\rowcolor{tablerow}
+\textbf{Sprint 3} & 28 avr -- 9 mai & 40 SP &
+\textbf{Notification Service + Payment Service}
+\newline notification-service : email transactionnel, WebSocket Unicast/Broadcast, Newsletter, types de messages
+\newline payment-service : Paystack + Stripe, abonnements, webhooks
+\newline Intégration auth-service (champ plan utilisateur)
+\newline Templates email (Jinja2) pour tous les événements \\
+\hline
+\textbf{Sprint 4} & 9 -- 19 mai & 42 SP &
+\textbf{Procurement Agent + Orchestrateur (ADK)}
+\newline orchestrator-agent : décomposition objectifs, Redis Streams, quotas plan
+\newline procurement-agent : web search, ranking, cache Redis 24h, approval flow
+\newline WebSocket live log vers frontend
+\newline NLP parse spécifications équipements \\
+\hline
+\rowcolor{tablerow}
+\textbf{Sprint 5} & 19 -- 26 mai & 40 SP &
+\textbf{Layout Engine + 3D Asset Service}
+\newline layout-engine : optimisation spatiale NetworkX, clearances 1.2m, manifeste JSON, variantes
+\newline 3d-asset-service : research agent, Meshy.ai, Shap-E fallback, MinIO GLB, useGLTF R3F
+\newline Scène 3D R3F : bâtiment, équipements, orbit, walkthrough, raycasting \\
+\hline
+\textbf{Sprint 6} & 26 mai -- 2 juin & 35 SP &
+\textbf{Analytics + Intégration + Tests}
+\newline analytics-service : BOM, coûts, ROI 5 ans, exports PDF/CSV
+\newline Intégration E2E complète (tous services)
+\newline Tests unitaires $\geq 80\%$ couverture
+\newline Tests Playwright (login → projet → 3D → export)
+\newline Monitoring Prometheus/Grafana/Jaeger \\
+\hline
+\rowcolor{tablerow}
+\textbf{Sprint 7} & 2 -- 6 juin & 20 SP &
+\textbf{Docs + Polish + Présentation}
+\newline OpenAPI Swagger UI (\texttt{/api/docs})
+\newline README complet
+\newline Rapport final (diagrammes archi, infra, déploiement)
+\newline Onboarding guide utilisateur
+\newline Optimisations performance (LOD, lazy loading)
+\newline \textbf{Démo finale : semaine du 6 juin} \\
+\hline
+\end{tabularx}
+
+\subsection{Nouveaux items backlog (v2.0)}
+
+\begin{longtable}{|l|l|X|l|l|}
+\hline
+\rowcolor{tablehead}
+\textcolor{white}{\textbf{ID}} &
+\textcolor{white}{\textbf{Épique}} &
+\textcolor{white}{\textbf{User Story}} &
+\textcolor{white}{\textbf{Priorité}} &
+\textcolor{white}{\textbf{SP}} \\
+\endhead
+\hline
+PB-057 & AUTH & En tant qu'utilisateur, je veux me connecter via Google OAuth2.0 pour éviter de gérer un mot de passe. & Must Have & 8 \\
+\hline
+\rowcolor{tablerow}
+PB-058 & AUTH & En tant que DevOps, je veux configurer Traefik ForwardAuth vers auth-service pour sécuriser tous les services sans logique dupliquée. & Must Have & 5 \\
+\hline
+PB-059 & NOTIF & En tant que système, je veux envoyer un email de vérification à l'inscription via le Notification Service. & Must Have & 3 \\
+\hline
+\rowcolor{tablerow}
+PB-060 & NOTIF & En tant qu'admin, je veux broadcaster un message à tous les utilisateurs connectés via WebSocket. & Must Have & 5 \\
+\hline
+PB-061 & NOTIF & En tant qu'utilisateur, je veux recevoir une notification en temps réel quand mon layout est généré. & Must Have & 5 \\
+\hline
+\rowcolor{tablerow}
+PB-062 & NOTIF & En tant qu'utilisateur, je veux m'abonner/désabonner à la newsletter Daedalus. & Should Have & 3 \\
+\hline
+PB-063 & PAY & En tant qu'utilisateur, je veux souscrire à un plan Starter via Paystack (carte ou Mobile Money). & Must Have & 8 \\
+\hline
+\rowcolor{tablerow}
+PB-064 & PAY & En tant que système, je veux traiter les webhooks Paystack et mettre à jour le plan utilisateur en base. & Must Have & 8 \\
+\hline
+PB-065 & PAY & En tant qu'utilisateur, je veux voir une page de pricing claire avec comparaison des plans. & Must Have & 5 \\
+\hline
+\rowcolor{tablerow}
+PB-066 & PAY & En tant qu'utilisateur, je veux upgrader/downgrader mon abonnement depuis mon dashboard. & Must Have & 5 \\
+\hline
+PB-067 & PAY & En tant qu'utilisateur Business, je veux inviter des membres dans mon workspace. & Should Have & 5 \\
+\hline
+\rowcolor{tablerow}
+PB-068 & 3D & En tant qu'utilisateur, je veux que le service génère un mesh 3D réaliste à partir des dimensions de mon équipement. & Must Have & 13 \\
+\hline
+PB-069 & 3D & En tant que développeur, je veux que la génération de mesh supporte Meshy.ai (premium) et Shap-E (fallback). & Must Have & 8 \\
+\hline
+\rowcolor{tablerow}
+PB-070 & AGENT & En tant que développeur, je veux que les quotas d'utilisation IA soient enforced par plan avant chaque run agent. & Must Have & 5 \\
+\hline
+\end{longtable}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Interfaces du système}
+
+\subsection{Interface utilisateur}
+
+Vues principales de la SPA React :
+
+\begin{enumerate}
+  \item \textbf{Landing Page} — présentation, pricing plans, CTA
+  \item \textbf{Auth} — login/register classique + boutons OAuth Google/GitHub
+  \item \textbf{Dashboard} — projets, statut, quotas restants du plan
+  \item \textbf{Pricing} — tableau comparatif plans, intégration Paystack checkout
+  \item \textbf{Project Config} — floor plan, industrie, budget
+  \item \textbf{Procurement Workspace} — input NL, résultats IA, approve/reject
+  \item \textbf{3D Factory Viewer} — scène R3F, orbit, walkthrough, raycasting, layer toggles
+  \item \textbf{Cost Analysis} — BOM, ROI chart, exports
+  \item \textbf{Notifications} — cloche, historique, préférences
+  \item \textbf{Account/Billing} — abonnement, historique paiements, membres workspace
+  \item \textbf{Admin Panel} — utilisateurs, agents config, monitoring
+\end{enumerate}
+
+\subsection{Interfaces logicielles}
+
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Interface}} & \textcolor{white}{\textbf{Description}} & \textcolor{white}{\textbf{Protocole}} \\
+\hline
+Traefik $\rightarrow$ Auth & ForwardAuth : validation JWT/OAuth & HTTP interne \\
+\hline
+\rowcolor{tablerow}
+Paystack Webhook & Événements paiement entrants & HTTPS POST \\
+\hline
+Stripe Webhook & Événements paiement internationaux & HTTPS POST \\
+\hline
+\rowcolor{tablerow}
+Mailgun API & Envoi emails transactionnels \& newsletters & HTTPS REST \\
+\hline
+Meshy.ai API & Génération mesh 3D text-to-3D & HTTPS REST \\
+\hline
+\rowcolor{tablerow}
+OpenAI/Anthropic & LLM pour agents procurement \& layout & HTTPS REST \\
+\hline
+Exchange Rate API & Taux de change XAF/USD en temps réel & HTTPS REST \\
+\hline
+\rowcolor{tablerow}
+RabbitMQ & Messagerie asynchrone inter-services & AMQP \\
+\hline
+Redis & Cache + pub/sub + sessions OAuth & Redis protocol \\
+\hline
+\rowcolor{tablerow}
+MinIO & Stockage assets 3D (S3 compatible) & S3 API \\
+\hline
+\end{tabularx}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Stack technologique}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Couche}} & \textcolor{white}{\textbf{Technologie}} & \textcolor{white}{\textbf{Justification}} \\
+\hline
+Frontend & React 18 + TypeScript & Écosystème riche, composants réutilisables \\
+\hline
+\rowcolor{tablerow}
+3D Engine & React Three Fiber + Three.js & Intégration React native, hooks déclaratifs \\
+\hline
+State Mgmt & Zustand & Léger, sans boilerplate \\
+\hline
+\rowcolor{tablerow}
+HTTP Client & Axios + React Query & Cache, retry, invalidation automatique \\
+\hline
+Backend Go & Go 1.22 + Fiber & Performances, auth-service, project-service \\
+\hline
+\rowcolor{tablerow}
+Backend Python & FastAPI + Python 3.12 & Typage, async natif, OpenAPI auto-générée \\
+\hline
+Agents IA & Google ADK & Multi-agents natif Python, tool use, sessions \\
+\hline
+\rowcolor{tablerow}
+LLM & GPT-4o / Gemini 2.0 Flash & Qualité NLP, vision (recherche image équipements) \\
+\hline
+Web Scraping & Playwright + BeautifulSoup & Headless browser pour sourcing fournisseurs \\
+\hline
+\rowcolor{tablerow}
+3D Generation & Meshy.ai API + Shap-E & Text/image-to-3D industriel \\
+\hline
+Message Queue & RabbitMQ 3.12 & Durabilité, routing topic, dead-letter queues \\
+\hline
+\rowcolor{tablerow}
+Cache & Redis 7 & Sessions, quotas, cache procurement 24h \\
+\hline
+Database & PostgreSQL 16 & Relationnel ACID, JSON natif \\
+\hline
+\rowcolor{tablerow}
+Object Storage & MinIO & S3 compatible, self-hosted, assets 3D \\
+\hline
+Gateway & Traefik 3 & ForwardAuth, TLS auto, rate limiting natif \\
+\hline
+\rowcolor{tablerow}
+Payments & Paystack + Stripe & MoMo Afrique (Paystack) + International (Stripe) \\
+\hline
+Email & Mailgun & Transactionnel + newsletters, webhooks tracking \\
+\hline
+\rowcolor{tablerow}
+CI/CD & Jenkins + Docker + K3s & Pipeline build-test-deploy automatisé \\
+\hline
+Monitoring & Prometheus + Grafana + Jaeger & Métriques, dashboards, traces distribuées \\
+\hline
+\rowcolor{tablerow}
+IaC & Terraform + Ansible & Provisioning VPS + configuration services \\
+\hline
+\end{tabularx}
+
+% ════════════════════════════════════════════════════════════════════════════
+\section{Appendices}
+
+\subsection{Flux OAuth2.0 complet}
+
+\begin{lstlisting}[language={}]
+1. User clique "Connexion Google"
+2. Frontend redirige vers /auth/oauth/google
+3. auth-service redirige vers accounts.google.com/oauth
+4. Google retourne code + state vers /auth/oauth/callback
+5. auth-service echange code contre access_token + id_token Google
+6. auth-service cree/met a jour l'utilisateur en base
+7. auth-service genere un JWT Daedalus (sub=user_id, plan=FREE)
+8. Redirection frontend avec JWT dans cookie HttpOnly
+9. Toutes les requetes suivantes : JWT dans header Authorization
+10. Traefik ForwardAuth valide le JWT -> headers X-User-* aux services
+\end{lstlisting}
+
+\subsection{Flux paiement Paystack}
+
+\begin{lstlisting}[language={}]
+1. User choisit plan Starter -> POST /payments/initialize
+2. payment-service cree une transaction Paystack
+3. Frontend redirige vers Paystack Checkout (hosted page)
+4. Paystack traite le paiement (carte ou MoMo)
+5. Paystack POST webhook -> /payments/webhook (HMAC valide)
+6. payment-service met a jour plan utilisateur en base
+7. Publie event payment.succeeded sur RabbitMQ
+8. auth-service souscrit -> met a jour le champ plan
+9. notification-service souscrit -> envoie email confirmation
+10. Frontend recoit WebSocket event -> affiche confirmation
+\end{lstlisting}
+
+\subsection{Glossaire complémentaire}
+
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Terme}} & \textcolor{white}{\textbf{Définition}} \\
+\hline
+Forward Auth & Mécanisme Traefik délégant la validation d'authentification à un service externe avant de router la requête. \\
+\hline
+ADK & Google Agent Development Kit — framework Python pour créer des agents IA multi-tours avec tool use. \\
+\hline
+Meshy.ai & Plateforme API de génération de modèles 3D (text-to-3D, image-to-3D) basée sur des modèles de diffusion. \\
+\hline
+Shap-E & Modèle open-source OpenAI de génération de meshes 3D implicites à partir de texte ou d'images. \\
+\hline
+MRR & Monthly Recurring Revenue — revenu mensuel récurrent des abonnements SaaS. \\
+\hline
+XAF & Franc CFA d'Afrique Centrale (CEMAC). 1 USD $\approx$ 600 XAF. \\
+\hline
+Mobile Money & Paiement mobile via MTN MoMo ou Orange Money, dominant en Afrique Centrale et de l'Ouest. \\
+\hline
+Unicast & Envoi d'un message à un destinataire unique identifié. \\
+\hline
+Broadcast & Envoi simultané d'un message à tous les utilisateurs connectés. \\
+\hline
+\end{tabularx}
+
+\subsection{Historique des révisions}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\rowcolor{tablehead}\textcolor{white}{\textbf{Version}} & \textcolor{white}{\textbf{Date}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+1.0 & Mars 2026 & Document initial \\
+\hline
+2.0 & Avril 2026 & Ajout Payment Service, Notification Service, OAuth2.0, Traefik ForwardAuth, 3D mesh génératif, stratégie ADK, module Shared, plan sprints révisé pour présentation juin 2026 \\
+\hline
+\end{tabularx}
+
+\vspace{3em}
+\begin{center}
+  \textcolor{daedalusgray}{\rule{8cm}{0.4pt}}\\[0.5em]
+  \textcolor{daedalusgray}{\small --- Fin du document ---}\\
+  \textcolor{daedalusgray}{\small Daedalus SRS v2.0 — ICT University SEN3244 — Spring 2026}
+\end{center}
+
+\end{document}

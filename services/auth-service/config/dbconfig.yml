@@ -1,0 +1,11 @@
+development:
+  dialect: mysql
+  datasource: dbname= user= password=  sslmode=disable
+  dir: migrations/mysql
+  table: migrations
+
+production:
+  dialect: postgres
+  datasource: dbname= sslmode=disable
+  dir: migrations/postgres
+  table: migrations
