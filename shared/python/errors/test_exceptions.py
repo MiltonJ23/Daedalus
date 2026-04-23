@@ -79,4 +79,4 @@ def test_is_validation():
 def test_error_inheritance():
     error = DaedalusNotFoundError("project", "123")
     assert isinstance(error, Exception)
-    assert isinstance(error, Exception)
+    assert isinstance(error, DaedalusNotFoundError)

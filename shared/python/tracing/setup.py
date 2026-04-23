@@ -1,8 +1,8 @@
 import logging
-from typing import Optional
 from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -12,19 +12,24 @@ from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 logger = logging.getLogger(__name__)
 
 
-def setup_tracing(service_name: str, jaeger_host: str = "jaeger:4317") -> None:
+def setup_tracing(service_name: str, app: FastAPI, jaeger_host: str = "jaeger:6831") -> None:
     try:
+        host_parts = jaeger_host.split(":")
+        agent_host = host_parts[0]
+        agent_port = int(host_parts[1]) if len(host_parts) > 1 else 6831
+
         jaeger_exporter = JaegerExporter(
-            agent_host_name=jaeger_host.split(":")[0],
-            agent_port=int(jaeger_host.split(":")[1]) if ":" in jaeger_host else 6831,
+            agent_host_name=agent_host,
+            agent_port=agent_port,
         )
 
-        trace.set_tracer_provider(TracerProvider())
-        trace.get_tracer_provider().add_span_processor(
-            BatchSpanProcessor(jaeger_exporter)
+        provider = TracerProvider(
+            resource=Resource.create({SERVICE_NAME: service_name})
         )
+        provider.add_span_processor(BatchSpanProcessor(jaeger_exporter))
+        trace.set_tracer_provider(provider)
 
-        FastAPIInstrumentor.instrument_app()
+        FastAPIInstrumentor.instrument_app(app)
         RequestsInstrumentor().instrument()
 
         logger.info(f"OpenTelemetry tracing initialized for {service_name}")

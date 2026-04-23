@@ -2,13 +2,15 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/MILTONJ23/Daedalus/Shared/errors"
+	"github.com/MiltonJ23/Daedalus/Shared/errors"
 )
 
 type Claims struct {
@@ -69,7 +71,7 @@ func (am *AuthMiddleware) validateToken(tokenString string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token")
 	}
 
-	if claims.ExpiresAt.Before(time.Now()) {
+	if claims.ExpiresAt == nil || claims.ExpiresAt.Before(time.Now()) {
 		return nil, fmt.Errorf("token expired")
 	}
 
@@ -108,7 +110,7 @@ func (lm *LoggingMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lm.handler.ServeHTTP(w, r)
 	duration := time.Since(start)
 
-	_ = fmt.Sprintf("%s %s - %v", r.Method, r.RequestURI, duration)
+	log.Printf("%s %s - %v", r.Method, r.RequestURI, duration)
 }
 
 func extractToken(r *http.Request) string {
@@ -122,4 +124,5 @@ func extractToken(r *http.Request) string {
 func writeError(w http.ResponseWriter, err *errors.DaedalusError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(err.HTTPStatus())
+	_ = json.NewEncoder(w).Encode(err)
 }

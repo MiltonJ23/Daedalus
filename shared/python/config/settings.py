@@ -14,7 +14,7 @@ class InfrastructureSettings(BaseSettings):
     minio_bucket_exports: str = Field(default="daedalus-exports", alias="MINIO_BUCKET_EXPORTS")
     minio_use_ssl: bool = Field(default=False, alias="MINIO_USE_SSL")
     database_url: str = Field(..., alias="DATABASE_URL")
-    jaeger_host: str = Field(default="jaeger:4317", alias="JAEGER_HOST")
+    jaeger_host: str = Field(default="jaeger:6831", alias="JAEGER_HOST")
 
     class Config:
         env_file = ".env"
@@ -91,23 +91,14 @@ class ServiceSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
-    infrastructure: InfrastructureSettings
-    auth: AuthSettings
-    payment: PaymentSettings
-    notification: NotificationSettings
-    ai: AISettings
-    service: ServiceSettings
+    infrastructure: InfrastructureSettings = Field(default_factory=InfrastructureSettings)
+    auth: AuthSettings = Field(default_factory=AuthSettings)
+    payment: PaymentSettings = Field(default_factory=PaymentSettings)
+    notification: NotificationSettings = Field(default_factory=NotificationSettings)
+    ai: AISettings = Field(default_factory=AISettings)
+    service: ServiceSettings = Field(default_factory=ServiceSettings)
 
     class Config:
         env_file = ".env"
         case_sensitive = False
         populate_by_name = True
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.infrastructure = InfrastructureSettings()
-        self.auth = AuthSettings()
-        self.payment = PaymentSettings()
-        self.notification = NotificationSettings()
-        self.ai = AISettings()
-        self.service = ServiceSettings()

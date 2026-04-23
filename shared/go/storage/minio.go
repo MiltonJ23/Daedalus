@@ -43,7 +43,7 @@ func NewMinIOClient(cfg MinIOConfig) (*MinIOClient, error) {
 	return &MinIOClient{client: client, config: cfg}, nil
 }
 
-func (mc *MinIOClient) UploadFile(ctx context.Context, bucket string, objectName string, filePath string, fileSize int64) error {
+func (mc *MinIOClient) UploadFile(ctx context.Context, bucket string, objectName string, filePath string) error {
 	_, err := mc.client.FPutObject(ctx, bucket, objectName, filePath, minio.PutObjectOptions{
 		ContentType: getContentType(objectName),
 	})

@@ -1,13 +1,13 @@
 import asyncio
 import json
 import logging
-from typing import Callable, Optional
+from typing import Any, Awaitable, Callable, Optional
 import aio_pika
 from aio_pika import IncomingMessage
 
 logger = logging.getLogger(__name__)
 
-MessageHandler = Callable[[bytes], asyncio.coroutine]
+MessageHandler = Callable[[bytes], Awaitable[Any]]
 
 
 class RabbitMQClient:
@@ -33,8 +33,8 @@ class RabbitMQClient:
             logger.error(f"Failed to connect to RabbitMQ: {e}")
             raise
 
-    async def publish(self, exchange: str, routing_key: str, message: dict) -> None:
-        if not self.channel:
+    async def publish(self, routing_key: str, message: dict) -> None:
+        if not self.channel or not self.exchange:
             raise RuntimeError("Not connected to RabbitMQ")
 
         try:
@@ -50,7 +50,7 @@ class RabbitMQClient:
             raise
 
     async def subscribe(
-        self, queue_name: str, routing_key: str, handler: Callable
+        self, queue_name: str, routing_key: str, handler: MessageHandler
     ) -> None:
         if not self.channel:
             raise RuntimeError("Not connected to RabbitMQ")
@@ -60,7 +60,7 @@ class RabbitMQClient:
             await queue.bind(self.exchange, routing_key=routing_key)
 
             async with queue.iterator() as queue_iter:
-                async for message: IncomingMessage in queue_iter:
+                async for message in queue_iter:
                     async with self.semaphore:
                         try:
                             await handler(message.body)

@@ -27,7 +27,7 @@ def test_infrastructure_settings_defaults(env_setup):
     settings = InfrastructureSettings()
     assert settings.minio_bucket_3d == "daedalus-3d-assets"
     assert settings.minio_use_ssl is False
-    assert settings.jaeger_host == "jaeger:4317"
+    assert settings.jaeger_host == "jaeger:6831"
 
 
 def test_settings_all_subsettings(env_setup):

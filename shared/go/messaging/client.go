@@ -126,7 +126,10 @@ func (rc *RabbitMQClient) Subscribe(ctx context.Context, exchange string, routin
 			select {
 			case <-ctx.Done():
 				return
-			case msg := <-msgs:
+			case msg, ok := <-msgs:
+				if !ok {
+					return
+				}
 				<-rc.pool.ch
 
 				go func(m amqp.Delivery) {

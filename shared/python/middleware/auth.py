@@ -1,10 +1,11 @@
 import logging
+import os
 import jwt
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthCredentials
-from errors.exceptions import DaedalusUnauthorizedError
+from ..errors.exceptions import DaedalusUnauthorizedError
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -43,13 +44,23 @@ class TokenManager:
             raise DaedalusUnauthorizedError("invalid token")
 
 
-async def get_current_user(credentials: HTTPAuthCredentials = Depends(security)) -> dict:
+async def get_current_user(
+    credentials: HTTPAuthCredentials = Depends(security),
+    jwt_secret: str = Depends(lambda: _get_jwt_secret()),
+) -> dict:
     token = credentials.credentials
     if not token:
         raise HTTPException(status_code=401, detail="Missing token")
 
     try:
-        tm = TokenManager("your-secret")
+        tm = TokenManager(jwt_secret)
         return tm.verify_token(token)
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+def _get_jwt_secret() -> str:
+    secret = os.environ.get("JWT_SECRET")
+    if not secret:
+        raise HTTPException(status_code=500, detail="JWT_SECRET not configured")
+    return secret

@@ -12,7 +12,7 @@ class RedisClient:
 
     async def connect(self) -> None:
         try:
-            self.client = await redis.from_url(
+            self.client = redis.from_url(
                 self.redis_url,
                 encoding="utf8",
                 decode_responses=True,

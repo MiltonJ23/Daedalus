@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -26,6 +27,7 @@ type HealthChecker interface {
 }
 
 func NewHealthCheckHandler(checkers map[string]HealthChecker) http.HandlerFunc {
+	startTime := time.Now()
 	return func(w http.ResponseWriter, r *http.Request) {
 		checks := make(map[string]Status)
 		overallStatus := StatusUp
@@ -47,6 +49,13 @@ func NewHealthCheckHandler(checkers map[string]HealthChecker) http.HandlerFunc {
 		} else {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
+		result := HealthCheckResult{
+			Status:        overallStatus,
+			Checks:        checks,
+			Timestamp:     time.Now(),
+			UptimeSeconds: int64(time.Since(startTime).Seconds()),
+		}
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }
 

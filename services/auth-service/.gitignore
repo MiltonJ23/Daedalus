@@ -1,3 +1,2 @@
-.vcs
-
-.xml
+.idea/
+*.xml
