@@ -1,4 +1,4 @@
-module github.com/MILTONJ23/Daedalus/Shared
+module github.com/MiltonJ23/Daedalus/Shared
 
 go 1.25.3
 
