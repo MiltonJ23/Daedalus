@@ -53,11 +53,15 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
 	})
 
+	// Prometheus metrics (NFR-O01)
+	mux.Handle("GET /metrics", handlers.MetricsHandler())
+
 	// Project API routes
 	handler.RegisterRoutes(mux)
 
-	// Apply middleware stack
+	// Apply middleware stack (outer → inner)
 	var httpHandler http.Handler = mux
+	httpHandler = handlers.MetricsMiddleware(httpHandler)
 	httpHandler = handlers.CORSMiddleware(httpHandler)
 	httpHandler = handlers.RequestLoggingMiddleware(httpHandler)
 

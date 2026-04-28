@@ -3,12 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { LayoutDashboard, FolderPlus, Factory } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderPlus,
+  Factory,
+  Bell,
+  CreditCard,
+  ShoppingCart,
+  Box,
+  BarChart3,
+  Shield,
+  Tag,
+} from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects/new", label: "Nouveau Projet", icon: FolderPlus },
+  { href: "/procurement", label: "Sourcing", icon: ShoppingCart },
+  { href: "/viewer", label: "Visualiseur 3D", icon: Box },
+  { href: "/analytics", label: "Analyse coûts", icon: BarChart3 },
+  { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/pricing", label: "Plans & Pricing", icon: Tag },
+  { href: "/billing", label: "Facturation", icon: CreditCard },
+  { href: "/admin", label: "Administration", icon: Shield },
 ];
 
 const sidebarVariants = {
@@ -20,8 +38,8 @@ const sidebarVariants = {
       type: "spring",
       stiffness: 300,
       damping: 30,
-      staggerChildren: 0.08,
-      delayChildren: 0.2,
+      staggerChildren: 0.05,
+      delayChildren: 0.15,
     },
   },
 };
@@ -41,12 +59,11 @@ export default function Sidebar() {
       animate="visible"
       className="fixed left-0 top-0 h-screen w-[260px] glass-dark flex flex-col z-50"
     >
-      {/* Logo */}
       <motion.div
         variants={itemVariants}
         className="px-6 py-7 border-b border-white/10"
       >
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <motion.div
             whileHover={{ rotate: 15, scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
@@ -66,8 +83,7 @@ export default function Sidebar() {
         </Link>
       </motion.div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
@@ -104,14 +120,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
       <motion.div
         variants={itemVariants}
-        className="p-4 border-t border-white/10"
+        className="p-4 border-t border-white/10 space-y-3"
       >
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-xs text-gray-500">
-          <span>v2.0.0 — Sprint 2</span>
+        <div className="px-4 py-2 rounded-xl bg-brand-500/10 border border-brand-500/20">
+          <p className="text-[10px] text-brand-400 uppercase tracking-wider font-semibold">
+            Plan actuel
+          </p>
+          <p className="text-sm font-bold text-white">FREE</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">1/1 projets · 3/3 runs IA</p>
         </div>
+        <div className="px-4 py-2 text-xs text-gray-500">v2.0.0 — SRS v2.0</div>
       </motion.div>
     </motion.aside>
   );

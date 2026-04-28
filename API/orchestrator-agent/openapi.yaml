@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Orchestrator Agent API
+  description: >
+    Agent racine (Google ADK) — décompose les objectifs utilisateur en sous-tâches
+    et délègue aux sub-agents. SRS v2.0 §5.2.2.
+  version: 2.0.0
+
+servers:
+  - url: http://orchestrator-agent:8084
+
+paths:
+  /agent/run:
+    post:
+      summary: Démarre une session agent (PROC-005, PROC-006)
+      description: >
+        Vérifie les quotas du plan utilisateur, puis décompose l'objectif et
+        publie les sous-tâches sur Redis Streams. Le log d'activité est streamé
+        en SSE.
+      tags: [Agent]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, goal]
+              properties:
+                project_id: { type: string, format: uuid }
+                goal:       { type: string, example: "Sourcer une ligne d'embouteillage 1000 L/h" }
+                context:    { type: object }
+      responses:
+        '200':
+          description: Stream SSE des étapes
+          content:
+            text/event-stream:
+              schema: { type: string }
+        '402':
+          description: Quota du plan dépassé (PROC-006)
+        '429':
+          description: Rate limit
+
+  /agent/sessions/{id}:
+    get:
+      summary: Récupère l'historique d'une session ADK
+      tags: [Agent]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentSession' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    AgentSession:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        project_id: { type: string, format: uuid }
+        status:     { type: string, enum: [running, succeeded, failed, canceled] }
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              agent:    { type: string, example: "procurement-agent" }
+              tool:     { type: string }
+              input:    { type: object }
+              output:   { type: object }
+              duration_ms: { type: integer }

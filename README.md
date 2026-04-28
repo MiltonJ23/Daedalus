@@ -1,146 +1,90 @@
-# 🏗️ Daedalus — Industrial Digital Twins Platform
+# Daedalus
 
-> Sprint 2 : Project Management & CI/CD (34 SP)
+> SaaS de conception architecturale assistée par IA — génération de plans 2D/3D,
+> sourcing automatisé et estimation budgétaire (SRS v2.0).
 
-## Architecture
+[![License](https://img.shields.io/badge/license-Proprietary-blue.svg)](LICENSE.md)
 
-Go Clean Architecture (Hexagonal), following Kliops reference project:
+---
 
-```
-services/project-service/
-├── cmd/project-api/     # Entry point, DI wiring, graceful shutdown
-├── internal/
-│   ├── core/
-│   │   ├── domain/      # Entities, error types
-│   │   ├── ports/       # Repository interfaces
-│   │   └── services/    # Use cases, validation
-│   └── adapters/
-│       ├── handlers/    # HTTP handlers (stdlib ServeMux), middleware
-│       └── repositories/# PostgreSQL (pgx/v5)
-├── deployments/
-│   ├── docker-compose.yml
-│   └── migrations/
-├── Makefile
-├── Dockerfile
-└── go.mod
-```
-
-## Quick Start
-
-### Prerequisites
-- Go 1.22+, Node.js 20+, Docker, Docker Compose
-
-### Local Development (Docker Compose)
+## 🚀 Démarrage rapide
 
 ```bash
-docker-compose up --build
+git clone https://github.com/MiltonJ23/Daedalus.git
+cd Daedalus
+cp .env.example .env          # ajuster les secrets
+docker compose up --build
 ```
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080/api
-- **Health check**: http://localhost:8080/health
+| Service        | URL                          |
+| -------------- | ---------------------------- |
+| Frontend       | http://localhost:3000        |
+| Project API    | http://localhost:8080        |
+| Metrics        | http://localhost:8080/metrics |
+| Prometheus     | http://localhost:9090        |
 
-### Manual Setup
+Plus de détails : [`wiki/getting-started.md`](wiki/getting-started.md).
 
-```bash
-# Backend
-cd services/project-service
-cp .env.example .env   # configure DB_DSN
-make docker-up          # start PostgreSQL
-psql $DB_DSN -f deployments/migrations/001_create_projects.sql
-make run                # builds and runs on :8080
+---
 
-# Frontend
-cd frontend
-npm install
-NEXT_PUBLIC_API_URL=http://localhost:8080/api npm run dev
-```
+## 🏗️ Architecture
 
-### Run Tests
-
-```bash
-cd services/project-service
-make test     # go test -v ./...
-make vet      # go vet ./...
-```
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/projects` | Create project |
-| GET | `/api/projects` | List projects (`?status=active\|archived\|all`) |
-| GET | `/api/projects/:id` | Get project |
-| PUT | `/api/projects/:id` | Update project |
-| PATCH | `/api/projects/:id/autosave` | Auto-save (incremental) |
-| PATCH | `/api/projects/:id/archive` | Archive / restore (`?action=restore`) |
-| DELETE | `/api/projects/:id?confirm=true` | Permanent delete |
-| GET | `/health` | Health check |
-| GET | `/metrics` | Prometheus metrics |
-
-Full OpenAPI spec: `docs/api/swagger.yaml`
-
-## Sprint 2 — User Stories
-
-| ID | Story | SP | Status |
-|----|-------|----|--------|
-| PB-011 | Jenkins pipeline with GitHub integration | 8 | ✅ |
-| PB-012 | Docker build & push to registry | 5 | ✅ |
-| PB-013 | Auto-deploy to Kubernetes (K3s) | 5 | ✅ |
-| PB-014 | Create factory project (CRUD) | 5 | ✅ |
-| PB-015 | Factory floor dimensions | 3 | ✅ |
-| PB-016 | Dashboard with status indicators | 3 | ✅ |
-| PB-017 | Auto-save every 60 seconds | 3 | ✅ |
-| PB-018 | Archive / delete projects | 2 | ✅ |
-
-## Testing
-
-```bash
-# Backend tests (27 tests — service + handler)
-cd services/project-service
-go test -v ./...
-
-# Backend lint
-go vet ./...
-
-# Frontend lint + build
-cd frontend
-npm run lint && npm run build
-
-# E2E tests (requires running stack)
-npx jest e2e-tests/
-```
-
-## CI/CD Pipeline (Jenkins)
-
-Location: `ci-cd/jenkins/Jenkinsfile`
+Microservices polyglottes (Go + Python) orchestrés derrière Traefik avec
+RabbitMQ comme bus d'événements et Redis pour le cache des quotas.
 
 ```
-Push → Lint & Test → Docker Build → Push Registry → Deploy K8s
+frontend (Next.js)
+    │
+    ▼
+Traefik ── ForwardAuth ── auth-service (Go)
+    │
+    ├── project-service     (Go)
+    ├── payment-service     (Python / FastAPI)
+    ├── notification-service(Python)
+    ├── orchestrator-agent  (Python / ADK)
+    ├── procurement-agent   (Python / ADK + Playwright)
+    ├── layout-engine       (Python / ADK)
+    ├── 3d-asset-service    (Python / Meshy.ai)
+    └── analytics-service   (Python / FastAPI)
 ```
 
-- Triggers on every GitHub push
-- Parallel Docker builds (backend + frontend)
-- Auto-deploy with `kubectl rollout status` verification
+Détails : [`architecture/project-management-service/README.md`](architecture/project-management-service/README.md)
+et [`wiki/architecture.md`](wiki/architecture.md).
 
-## Kubernetes
+---
 
-```bash
-kubectl apply -f infrastructure/kubernetes/
-kubectl rollout status deployment/backend -n daedalus
-```
+## 📁 Organisation du dépôt
 
-## Monitoring
+| Dossier              | Rôle                                               |
+| -------------------- | -------------------------------------------------- |
+| `services/`          | Code source des microservices                      |
+| `frontend/`          | Application Next.js 14 (R3F pour la 3D)            |
+| `shared/`            | Bibliothèques partagées (logging, etc.)            |
+| `API/`               | Spécifications OpenAPI 3.0 par service             |
+| `ci-cd/`             | Pipelines Jenkins par service                      |
+| `rapport/`           | Documentation fonctionnelle par service            |
+| `architecture/`      | Diagrammes C4, séquence, ADRs                      |
+| `infrastructure/`    | Terraform, Ansible, Kubernetes, Prometheus/Grafana |
+| `wiki/`              | Documentation transverse                           |
+| `e2e-tests/`         | Tests bout-en-bout (Playwright)                    |
+| `Daedalus_SRS_v2.0.pdf` | Spécifications fonctionnelles                  |
 
-- **Prometheus**: scrapes `/metrics` → `infrastructure/monitoring/prometheus.yml`
-- **Grafana**: dashboard → `infrastructure/monitoring/grafana-dashboard.json`
+---
 
-## Tech Stack
+## 🧪 Qualité & Observabilité
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Go 1.22+, stdlib http.ServeMux, pgx/v5 |
-| Frontend | Next.js 14, React 18, TypeScript 5, Tailwind CSS |
-| Database | PostgreSQL 16 |
-| CI/CD | Jenkins, Docker, Kubernetes (K3s) |
-| Monitoring | Prometheus, Grafana |
+* **Tests Go** : `cd services/project-service && go test ./...`
+* **Linting** : `golangci-lint run` (Go) · `ruff` (Python) · `npm run lint` (frontend)
+* **Métriques** : tous les services exposent `/metrics` (Prometheus)
+* **Tracing** : OpenTelemetry → Jaeger
+* **CI/CD** : Jenkins (cf. [`ci-cd/README.md`](ci-cd/README.md))
+
+---
+
+## 🤝 Contribuer
+
+Voir [`CONTRIBUTING.md`](CONTRIBUTING.md) et [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+
+## 📄 Licence
+
+Proprietary — voir [`LICENSE.md`](LICENSE.md).

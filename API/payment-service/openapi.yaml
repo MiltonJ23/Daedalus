@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Payment Service API
+  description: >
+    Abonnements SaaS (Free / Starter / Business / Enterprise).
+    Paystack + Stripe + Mobile Money. SRS v2.0 §3.4 (PAY-001 → PAY-011).
+  version: 2.0.0
+
+servers:
+  - url: http://payment-service:8082
+    description: Service interne (cluster K3s)
+  - url: https://api.daedalus.io/payments
+    description: Production (via Traefik)
+
+paths:
+  /plans:
+    get:
+      summary: Grille tarifaire (PAY-009)
+      tags: [Plans]
+      responses:
+        '200':
+          description: Liste des plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Plan' }
+
+  /payments/initialize:
+    post:
+      summary: Démarrer une souscription (PAY-001, PAY-002)
+      tags: [Subscriptions]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan, billing_cycle, provider]
+              properties:
+                plan:          { type: string, enum: [STARTER, BUSINESS, ENTERPRISE] }
+                billing_cycle: { type: string, enum: [monthly, yearly] }
+                provider:      { type: string, enum: [paystack, stripe] }
+      responses:
+        '200':
+          description: URL de checkout hosted page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkout_url:    { type: string, format: uri }
+                  transaction_id:  { type: string }
+
+  /payments/webhook/paystack:
+    post:
+      summary: Webhook Paystack (PAY-004)
+      description: HMAC SHA512 validé via header x-paystack-signature.
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        '200': { description: Event traité }
+        '401': { description: Signature invalide }
+
+  /payments/webhook/stripe:
+    post:
+      summary: Webhook Stripe (PAY-004)
+      description: Signature validée via header Stripe-Signature.
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        '200': { description: Event traité }
+        '401': { description: Signature invalide }
+
+  /subscriptions/me:
+    get:
+      summary: Abonnement courant (PAY-007)
+      tags: [Subscriptions]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Subscription' }
+
+  /subscriptions/me/upgrade:
+    post:
+      summary: Upgrade / downgrade (PAY-006)
+      tags: [Subscriptions]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_plan]
+              properties:
+                target_plan: { type: string, enum: [FREE, STARTER, BUSINESS, ENTERPRISE] }
+      responses:
+        '200': { description: Modification enregistrée (downgrade différé fin de période) }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Plan:
+      type: object
+      properties:
+        code:           { type: string, enum: [FREE, STARTER, BUSINESS, ENTERPRISE] }
+        price_xaf:      { type: integer, example: 9900 }
+        price_usd:      { type: number,  example: 16 }
+        max_projects:   { type: integer, example: 5 }
+        ai_runs_month:  { type: integer, example: 30 }
+        team_members:   { type: integer, example: 1 }
+    Subscription:
+      type: object
+      properties:
+        id:               { type: string, format: uuid }
+        plan:             { $ref: '#/components/schemas/Plan' }
+        status:           { type: string, enum: [pending, active, past_due, canceled] }
+        billing_cycle:    { type: string, enum: [monthly, yearly] }
+        current_period_end: { type: string, format: date-time }

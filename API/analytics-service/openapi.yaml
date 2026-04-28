@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Analytics & Cost Service API
+  description: >
+    Coûts (équipement + shipping + installation + contingency 10%), ROI 5 ans,
+    exports BOM PDF/CSV. SRS v2.0 §3.8 (ANA-001 → ANA-004).
+  version: 2.0.0
+
+servers:
+  - url: http://analytics-service:8088
+
+paths:
+  /projects/{project_id}/costs:
+    get:
+      summary: Breakdown complet des coûts (ANA-001)
+      tags: [Costs]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CostBreakdown' }
+
+  /projects/{project_id}/roi:
+    post:
+      summary: Projection ROI 5 ans (ANA-003)
+      tags: [ROI]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [annual_volume_units, unit_price_xaf]
+              properties:
+                annual_volume_units: { type: integer }
+                unit_price_xaf:      { type: number }
+                opex_xaf_year:       { type: number }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ROIProjection' }
+
+  /projects/{project_id}/bom.pdf:
+    get:
+      summary: Export BOM PDF (ANA-002, ANA-004)
+      tags: [Exports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+
+  /projects/{project_id}/bom.csv:
+    get:
+      summary: Export BOM CSV
+      tags: [Exports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            text/csv:
+              schema: { type: string }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    CostBreakdown:
+      type: object
+      properties:
+        equipment_xaf:    { type: number }
+        shipping_xaf:     { type: number }
+        installation_xaf: { type: number }
+        contingency_xaf:  { type: number, description: "10%" }
+        total_xaf:        { type: number }
+        total_usd:        { type: number }
+        fx_rate:          { type: number, description: "XAF/USD" }
+    ROIProjection:
+      type: object
+      properties:
+        capex_xaf:        { type: number }
+        npv_xaf:          { type: number }
+        irr_pct:          { type: number }
+        payback_months:   { type: integer }
+        cashflows_yearly: { type: array, items: { type: number } }

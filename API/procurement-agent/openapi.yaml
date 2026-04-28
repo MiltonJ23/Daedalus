@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Procurement Agent API
+  description: >
+    Sourcing IA d'équipements industriels (Alibaba, Made-in-China, TradeIndia).
+    SRS v2.0 §3.5 (PROC-001 → PROC-006).
+  version: 2.0.0
+
+servers:
+  - url: http://procurement-agent:8085
+
+paths:
+  /procurement/parse:
+    post:
+      summary: Parse NL → JSON équipement (PROC-001)
+      tags: [Parsing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description]
+              properties:
+                description: { type: string, example: "broyeur à marteaux 2 tonnes/heure pour cacao" }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EquipmentSpec' }
+
+  /procurement/search:
+    post:
+      summary: Recherche fournisseurs (PROC-002, PROC-003)
+      description: Cache Redis 24h (PROC-004). Retourne ≥5 résultats classés.
+      tags: [Sourcing]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EquipmentSpec' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SupplierResult' }
+
+  /procurement/results/{id}/approve:
+    post:
+      summary: Approuver / rejeter un résultat (PROC-004)
+      tags: [Approval]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision: { type: string, enum: [approve, reject] }
+                reason:   { type: string }
+      responses:
+        '204': { description: OK }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    EquipmentSpec:
+      type: object
+      properties:
+        type:           { type: string, example: "hammer_mill" }
+        capacity:       { type: string, example: "2 t/h" }
+        dimensions_m:   { type: array, items: { type: number }, minItems: 3, maxItems: 3 }
+        budget_usd:     { type: number }
+        country_pref:   { type: string, example: "CN" }
+    SupplierResult:
+      type: object
+      properties:
+        id:           { type: string, format: uuid }
+        supplier:     { type: string, example: "Alibaba — Henan Brand" }
+        product_url:  { type: string, format: uri }
+        price_usd:    { type: number }
+        price_xaf:    { type: number }
+        lead_time_d:  { type: integer }
+        rating:       { type: number, minimum: 0, maximum: 5 }

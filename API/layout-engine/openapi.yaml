@@ -1,0 +1,97 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Layout Engine API
+  description: >
+    Optimisation spatiale (NetworkX) — placement équipements + clearances 1.2 m.
+    SRS v2.0 §3.6 (LAY-001 → LAY-006).
+  version: 2.0.0
+
+servers:
+  - url: http://layout-engine:8086
+
+paths:
+  /layout/generate:
+    post:
+      summary: Génère un layout (LAY-001 → LAY-006)
+      description: >
+        < 60s, sans collisions, clearances 1.2m enforced. Plan Business+ retourne
+        jusqu'à 3 variantes (LAY-004).
+      tags: [Layout]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LayoutRequest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  variants:
+                    type: array
+                    items: { $ref: '#/components/schemas/LayoutManifest' }
+
+  /layout/{id}/validate:
+    post:
+      summary: Valide un placement manuel (drag-and-drop, LAY-005)
+      tags: [Validation]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LayoutManifest' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:        { type: boolean }
+                  collisions:   { type: array, items: { type: string } }
+                  clearances_ok:{ type: boolean }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    LayoutRequest:
+      type: object
+      properties:
+        floor_l_m:  { type: number }
+        floor_w_m:  { type: number }
+        floor_h_m:  { type: number }
+        equipments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:           { type: string, format: uuid }
+              type:         { type: string }
+              dimensions_m: { type: array, items: { type: number }, minItems: 3, maxItems: 3 }
+        flow:
+          type: array
+          description: Séquence de production (ordre des équipements)
+          items: { type: string, format: uuid }
+    LayoutManifest:
+      type: object
+      properties:
+        id:        { type: string, format: uuid }
+        score:     { type: number, description: "Coût trajets matière" }
+        placements:
+          type: array
+          items:
+            type: object
+            properties:
+              equipment_id: { type: string, format: uuid }
+              position:     { type: array, items: { type: number }, minItems: 3, maxItems: 3 }
+              rotation_deg: { type: number }

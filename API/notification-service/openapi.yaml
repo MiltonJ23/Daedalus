@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Notification Service API
+  description: >
+    Hub centralisé email / WebSocket / newsletter.
+    SRS v2.0 §3.3 (NOTIF-001 → NOTIF-009).
+  version: 2.0.0
+
+servers:
+  - url: http://notification-service:8083
+
+paths:
+  /notifications/send:
+    post:
+      summary: Envoi direct service-to-service (NOTIF-008)
+      tags: [Direct]
+      security: [{ serviceToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, channel, type, payload]
+              properties:
+                user_id: { type: string, format: uuid }
+                channel: { type: string, enum: [email, websocket, in_app] }
+                type:    { type: string, enum: [INFO, SUCCESS, WARNING, ERROR, AGENT_UPDATE] }
+                template:{ type: string, example: "payment.succeeded" }
+                payload: { type: object }
+      responses:
+        '202': { description: Notification mise en file }
+
+  /notifications/me:
+    get:
+      summary: Historique in-app (NOTIF-007)
+      tags: [In-App]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: unread_only
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+
+  /notifications/me/{id}/read:
+    post:
+      summary: Marquer comme lu
+      tags: [In-App]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: OK }
+
+  /notifications/preferences:
+    get:
+      summary: Préférences utilisateur (NOTIF-009)
+      tags: [Preferences]
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { content: { application/json: { schema: { $ref: '#/components/schemas/Preferences' } } } }
+    put:
+      summary: Mise à jour préférences
+      tags: [Preferences]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/Preferences' } } }
+      responses:
+        '200': { description: OK }
+
+  /newsletter/subscribe:
+    post:
+      summary: Opt-in newsletter (NOTIF-005)
+      tags: [Newsletter]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: Subscriber ajouté (Mailgun List) }
+
+  /newsletter/unsubscribe:
+    post:
+      summary: Opt-out newsletter
+      tags: [Newsletter]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, token]
+              properties:
+                email: { type: string, format: email }
+                token: { type: string }
+      responses:
+        '204': { description: OK }
+
+components:
+  securitySchemes:
+    bearerAuth:   { type: http, scheme: bearer, bearerFormat: JWT }
+    serviceToken: { type: apiKey, in: header, name: X-Service-Token }
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:         { type: string, format: uuid }
+        type:       { type: string, enum: [INFO, SUCCESS, WARNING, ERROR, AGENT_UPDATE] }
+        title:      { type: string }
+        body:       { type: string }
+        is_read:    { type: boolean }
+        created_at: { type: string, format: date-time }
+    Preferences:
+      type: object
+      properties:
+        email_marketing:      { type: boolean, default: true }
+        email_transactional:  { type: boolean, default: true }
+        websocket_realtime:   { type: boolean, default: true }

@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Daedalus Auth Service API
+  description: >
+    Authentification & autorisation (JWT, OAuth2.0, Traefik Forward Auth).
+    SRS v2.0 §3.1 (AUTH-001 → AUTH-010).
+  version: 2.0.0
+
+servers:
+  - url: http://auth-service:8081
+    description: Service interne (cluster K3s)
+  - url: https://api.daedalus.io/auth
+    description: Production (via Traefik)
+
+paths:
+  /auth/register:
+    post:
+      summary: Inscription email + mot de passe (AUTH-001)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201': { description: Compte créé, email de vérification envoyé }
+        '409': { description: Email déjà utilisé }
+
+  /auth/login:
+    post:
+      summary: Connexion classique → JWT + refresh (AUTH-002)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Tokens émis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:  { type: string, description: "JWT 30 min" }
+                  refresh_token: { type: string, description: "Refresh 7 jours" }
+                  user:          { $ref: '#/components/schemas/User' }
+        '401': { description: Identifiants invalides }
+
+  /auth/oauth/google:
+    get:
+      summary: Démarre le flux OAuth2.0 Google (AUTH-005)
+      tags: [OAuth]
+      responses:
+        '302': { description: Redirection vers Google }
+
+  /auth/oauth/github:
+    get:
+      summary: Démarre le flux OAuth2.0 GitHub (AUTH-006)
+      tags: [OAuth]
+      responses:
+        '302': { description: Redirection vers GitHub }
+
+  /auth/oauth/callback:
+    get:
+      summary: Callback OAuth — échange code → token Daedalus
+      tags: [OAuth]
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema: { type: string }
+        - in: query
+          name: state
+          required: true
+          schema: { type: string }
+      responses:
+        '302': { description: Redirection frontend, JWT en cookie HttpOnly }
+
+  /auth/verify:
+    get:
+      summary: Endpoint Traefik Forward Auth (AUTH-007, AUTH-008)
+      description: >
+        Validé par Traefik avant chaque requête vers les services protégés.
+        Retourne les headers X-User-Id, X-User-Role, X-User-Plan.
+      tags: [ForwardAuth]
+      responses:
+        '200':
+          description: Token valide
+          headers:
+            X-User-Id:   { schema: { type: string, format: uuid } }
+            X-User-Role: { schema: { type: string, enum: [ADMIN, ENGINEER, ENTREPRENEUR] } }
+            X-User-Plan: { schema: { type: string, enum: [FREE, STARTER, BUSINESS, ENTERPRISE] } }
+        '401': { description: Token absent / invalide → Traefik renvoie 401 }
+
+  /auth/password/reset:
+    post:
+      summary: Demande de reset (AUTH-003)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '202': { description: Email envoyé si compte existe }
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:    { type: string, format: uuid }
+        email: { type: string, format: email }
+        role:  { type: string, enum: [ADMIN, ENGINEER, ENTREPRENEUR] }
+        plan:  { type: string, enum: [FREE, STARTER, BUSINESS, ENTERPRISE] }

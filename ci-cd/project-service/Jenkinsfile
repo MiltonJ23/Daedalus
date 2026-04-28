@@ -1,0 +1,67 @@
+// CI-CD pipeline — Daedalus project-service (Go + pgx/v5)
+pipeline {
+    agent any
+    environment {
+        SERVICE_NAME   = 'project-service'
+        SERVICE_PATH   = 'services/project-service'
+        IMAGE_NAME     = 'daedalus-project'
+        REGISTRY       = credentials('docker-registry-url')
+        REGISTRY_CREDS = credentials('docker-registry-credentials')
+        KUBECONFIG     = credentials('kubeconfig')
+        IMAGE_TAG      = "${env.GIT_COMMIT?.take(8) ?: 'latest'}"
+    }
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+    triggers { githubPush() }
+
+    stages {
+        stage('Lint & Test') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh '''
+                        go vet ./...
+                        go test -v ./... -coverprofile=coverage.out
+                    '''
+                }
+            }
+        }
+        stage('Build Binary') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh 'CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/project-api ./cmd/project-api'
+                }
+            }
+        }
+        stage('Docker Build & Push') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh """
+                        docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                        docker tag  ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
+                        echo \${REGISTRY_CREDS_PSW} | docker login \${REGISTRY} -u \${REGISTRY_CREDS_USR} --password-stdin
+                        docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${REGISTRY}/${IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+        stage('Deploy K3s') {
+            steps {
+                sh """
+                    export KUBECONFIG=\${KUBECONFIG}
+                    kubectl apply -f infrastructure/kubernetes/
+                    kubectl set image deployment/backend backend=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n daedalus
+                    kubectl rollout status deployment/backend -n daedalus --timeout=120s
+                """
+            }
+        }
+    }
+    post {
+        success { echo "✅ ${SERVICE_NAME} ${IMAGE_TAG} deployed" }
+        failure { echo "❌ ${SERVICE_NAME} pipeline failed at ${env.STAGE_NAME}" }
+        always  { cleanWs() }
+    }
+}

@@ -1,0 +1,74 @@
+// CI-CD pipeline — Daedalus notification-service (Python + FastAPI)
+pipeline {
+    agent any
+    environment {
+        SERVICE_NAME   = 'notification-service'
+        SERVICE_PATH   = 'services/notification-service'
+        IMAGE_NAME     = 'daedalus-notification'
+        REGISTRY       = credentials('docker-registry-url')
+        REGISTRY_CREDS = credentials('docker-registry-credentials')
+        KUBECONFIG     = credentials('kubeconfig')
+        IMAGE_TAG      = "${env.GIT_COMMIT?.take(8) ?: 'latest'}"
+    }
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+    triggers { githubPush() }
+
+    stages {
+        stage('Setup Python') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh '''
+                        python3.12 -m venv .venv
+                        . .venv/bin/activate
+                        pip install --upgrade pip
+                        pip install -r requirements.txt -r requirements-dev.txt
+                    '''
+                }
+            }
+        }
+        stage('Lint & Test') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh '''
+                        . .venv/bin/activate
+                        ruff check .
+                        mypy app/ || true
+                        pytest -v --cov=app --cov-report=term-missing
+                    '''
+                }
+            }
+        }
+        stage('Docker Build & Push') {
+            steps {
+                dir("${SERVICE_PATH}") {
+                    sh """
+                        docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} .
+                        docker tag  ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ${REGISTRY}/${IMAGE_NAME}:latest
+                        echo \${REGISTRY_CREDS_PSW} | docker login \${REGISTRY} -u \${REGISTRY_CREDS_USR} --password-stdin
+                        docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${REGISTRY}/${IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+        stage('Deploy K3s') {
+            steps {
+                sh """
+                    export KUBECONFIG=\${KUBECONFIG}
+                    kubectl set image deployment/${SERVICE_NAME} \
+                        ${SERVICE_NAME}=${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -n daedalus
+                    kubectl rollout status deployment/${SERVICE_NAME} -n daedalus --timeout=120s
+                """
+            }
+        }
+    }
+    post {
+        success { echo "✅ ${SERVICE_NAME} ${IMAGE_TAG} deployed" }
+        failure { echo "❌ ${SERVICE_NAME} pipeline failed at ${env.STAGE_NAME}" }
+        always  { cleanWs() }
+    }
+}

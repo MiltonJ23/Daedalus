@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: Daedalus 3D Asset Service API
+  description: >
+    Génération de mesh 3D (Meshy.ai → Shap-E → géométrie procédurale).
+    SRS v2.0 §3.7 (3D-001 → 3D-008).
+  version: 2.0.0
+
+servers:
+  - url: http://3d-asset-service:8087
+
+paths:
+  /assets/generate:
+    post:
+      summary: Génère ou récupère un mesh GLB (3D-002, 3D-003, 3D-008)
+      description: >
+        Cache MinIO sur clé (type + dims + plan). Qualité selon le plan utilisateur :
+        Free/Starter = procédural, Business = Shap-E, Enterprise = Meshy.ai.
+      tags: [Assets]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [equipment_type, dimensions_m]
+              properties:
+                equipment_type: { type: string, example: "hammer_mill" }
+                brand:          { type: string }
+                model:          { type: string }
+                dimensions_m:   { type: array, items: { type: number }, minItems: 3, maxItems: 3 }
+      responses:
+        '200':
+          description: GLB prêt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResult' }
+        '202':
+          description: Génération en cours (poller /assets/{job_id})
+
+  /assets/{job_id}:
+    get:
+      summary: Statut / résultat d'un job de génération
+      tags: [Assets]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AssetResult' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    AssetResult:
+      type: object
+      properties:
+        job_id:       { type: string, format: uuid }
+        status:       { type: string, enum: [queued, generating, ready, failed] }
+        glb_url:      { type: string, format: uri, description: "URL MinIO presignée" }
+        quality:      { type: string, enum: [procedural, shap-e, meshy.ai] }
+        cache_hit:    { type: boolean }
