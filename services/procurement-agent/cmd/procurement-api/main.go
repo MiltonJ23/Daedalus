@@ -1,0 +1,119 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
+
+	"github.com/Daedalus/procurement-agent/internal/adapters/currency"
+	"github.com/Daedalus/procurement-agent/internal/adapters/extractor"
+	"github.com/Daedalus/procurement-agent/internal/adapters/handlers"
+	"github.com/Daedalus/procurement-agent/internal/adapters/repositories"
+	"github.com/Daedalus/procurement-agent/internal/adapters/suppliers"
+	"github.com/Daedalus/procurement-agent/internal/core/ports"
+	"github.com/Daedalus/procurement-agent/internal/core/services"
+)
+
+func main() {
+	// 1. Load .env (Kliops pattern)
+	godotenv.Load()
+
+	// 2. Connect to PostgreSQL (pgxpool — Kliops pattern)
+	dbDSN := os.Getenv("DB_DSN")
+	if dbDSN == "" {
+		dbDSN = "postgres://daedalus:daedalus@localhost:5433/daedalus?sslmode=disable"
+	}
+
+	dbPool, err := pgxpool.New(context.Background(), dbDSN)
+	if err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	}
+	defer dbPool.Close()
+
+	if err := dbPool.Ping(context.Background()); err != nil {
+		log.Fatalf("Failed to ping PostgreSQL: %v", err)
+	}
+	log.Println("Connected to PostgreSQL")
+
+	// 3. Wire dependencies (bottom-up: repos → suppliers → service → handler)
+	searchRepo := repositories.NewSearchPostgres(dbPool)
+	resultRepo := repositories.NewResultPostgres(dbPool)
+
+	// FR-PROC-02: at least 3 supplier sources. Replace with real adapters
+	// (Alibaba, IndustryStock, DirectIndustry, …) as they're implemented.
+	supplierList := []ports.SupplierCatalog{
+		suppliers.NewMockSupplier("Alibaba", "China", 4.2, 0.95, 0, 600),
+		suppliers.NewMockSupplier("IndustryStock", "Germany", 4.6, 1.10, 5, 600),
+		suppliers.NewMockSupplier("DirectIndustry", "France", 4.0, 1.00, 10, 600),
+	}
+
+	// PB-021: live USD→XAF rate, cached 1h, with static fallback.
+	exchangeURL := os.Getenv("EXCHANGE_RATE_URL")
+	currencyConv := currency.NewHTTPConverter(exchangeURL, 600, 5*time.Second)
+
+	// PB-019: heuristic spec extractor (offline default; swap with LLM later).
+	specExtractor := extractor.NewHeuristicExtractor()
+
+	procService := services.NewProcurementService(searchRepo, resultRepo, supplierList, currencyConv, specExtractor)
+	handler := handlers.NewProcurementHandler(procService)
+
+	// 4. Setup routes (http.ServeMux — Kliops pattern)
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+	})
+
+	mux.Handle("GET /metrics", handlers.MetricsHandler())
+
+	handler.RegisterRoutes(mux)
+
+	var httpHandler http.Handler = mux
+	httpHandler = handlers.MetricsMiddleware(httpHandler)
+	httpHandler = handlers.CORSMiddleware(httpHandler)
+	httpHandler = handlers.RequestLoggingMiddleware(httpHandler)
+
+	// 5. Start HTTP server (Kliops pattern)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
+	srv := &http.Server{
+		Addr:         ":" + port,
+		Handler:      httpHandler,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 35 * time.Second, // procurement search may take ≤30s (NFR-P01)
+		IdleTimeout:  120 * time.Second,
+	}
+
+	go func() {
+		log.Printf("Starting Daedalus Procurement Agent on port %s...", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed: %v", err)
+		}
+	}()
+
+	// 6. Graceful shutdown (Kliops pattern)
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down server...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+	log.Println("Server exited gracefully")
+}

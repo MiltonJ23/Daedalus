@@ -1,0 +1,5 @@
+development:
+  dialect: postgres
+  datasource: postgres://daedalus:daedalus@localhost:5434/daedalus_orchestrator?sslmode=disable
+  dir: deployments/migrations
+  table: gorp_migrations
