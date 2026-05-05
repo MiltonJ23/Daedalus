@@ -1,0 +1,14 @@
+development:
+  dialect: mysql
+  datasource: root:root@tcp(localhost:3306)/daedalus_auth?parseTime=true
+  dir: migrations
+
+test:
+  dialect: mysql
+  datasource: root:root@tcp(localhost:3306)/daedalus_test?parseTime=true
+  dir: migrations
+
+production:
+  dialect: mysql
+  datasource: ${AUTH_MYSQL_DSN}
+  dir: migrations
