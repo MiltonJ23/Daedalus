@@ -1,4 +1,4 @@
-.PHONY: run build test clean migrate-up migrate-down
+.PHONY: run build test clean migrate-up migrate-down dev-db-up dev-db-down
 
 run:
 	go run cmd/api/main.go
@@ -11,3 +11,9 @@ test:
 
 clean:
 	rm -rf bin/
+
+dev-db-up:
+	docker compose -f docker-compose.dev.yml up -d
+
+dev-db-down:
+	docker compose -f docker-compose.dev.yml down
