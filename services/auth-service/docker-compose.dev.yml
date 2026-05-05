@@ -1,0 +1,13 @@
+services:
+  mysql-dev:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: daedalus_auth
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-dev-data:/var/lib/mysql
+
+volumes:
+  mysql-dev-data:
