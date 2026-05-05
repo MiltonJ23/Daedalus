@@ -1,0 +1,9 @@
+.idea
+.vcs
+.DS_Store
+*.iml
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
